@@ -2,8 +2,142 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cyber Corner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Open Shelf</title>
+<meta name="description" content="Free classic books to read online.">
+<style>
+/* Layout: a library grid of type-only covers; the reader is a single centered column. System fonts only, so nothing extra downloads. */
+:root {
+  --bg: #fafaf8; --surface: #ffffff; --ink: #1c2229; --muted: #5f6b76; --line: #e3e5e6; --accent: #2a5b8c;
+  --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --size: 19px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="sepia"]) {
+  --bg: #14171b; --surface: #1b1f24; --ink: #e4e6e8; --muted: #9aa4ad; --line: #2c3239; --accent: #8db8e3; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #14171b; --surface: #1b1f24; --ink: #e4e6e8; --muted: #9aa4ad; --line: #2c3239; --accent: #8db8e3; color-scheme: dark }
+:root[data-theme="sepia"] { --bg: #f3ead8; --surface: #f8f1e3; --ink: #3b2f22; --muted: #7a6a56; --line: #e0d3bb; --accent: #8a5a2b }
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+@media (max-width: 480px) { .bar .t { display: none } select.ib { flex: 1; max-width: none } }
+html { -webkit-text-size-adjust: 100% }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans);
+  padding: 0 max(16px, env(safe-area-inset-left)) 48px max(16px, env(safe-area-inset-right)) }
+a { color: var(--accent) }
+button, select, input { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.wrap { max-width: 1040px; margin: 0 auto }
+header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 28px 0 20px }
+.brand { font: 600 26px/1 var(--serif); letter-spacing: -.01em; color: var(--ink); text-decoration: none }
+.brand small { display: block; font: 13px var(--sans); color: var(--muted); letter-spacing: 0; margin-top: 6px }
+#q { width: min(280px, 100%); padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
+.continue { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-decoration: none; color: var(--ink) }
+.continue span { color: var(--muted); font-size: 13px }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 28px 20px }
+.book { text-decoration: none; color: var(--ink); display: grid; gap: 10px }
+.cover { aspect-ratio: 2/3; max-width: 100%; border-radius: 4px 8px 8px 4px; padding: 16px 14px; display: flex; flex-direction: column; justify-content: space-between;
+  color: #fff; background: hsl(var(--h) 38% 30%); box-shadow: inset 6px 0 0 rgb(0 0 0 / .18), 0 1px 2px rgb(0 0 0 / .15); transition: transform .15s }
+.book:hover .cover { transform: translateY(-3px) }
+.cover b { font: 600 19px/1.15 var(--serif); text-wrap: balance }
+.cover i { font: 12px var(--sans); font-style: normal; opacity: .85; letter-spacing: .04em; text-transform: uppercase }
+.meta { font-size: 13px; color: var(--muted); line-height: 1.35 }
+.meta strong { display: block; color: var(--ink); font-weight: 600; font-size: 14px }
+.empty { color: var(--muted); padding: 40px 0 }
+footer.note { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px }
+
+/* reader */
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line) }
+.bar .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; font-size: 14px }
+.ib { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; text-decoration: none; color: var(--ink); white-space: nowrap }
+.ib:hover { background: var(--surface) }
+select.ib { max-width: 38vw }
+.prog { height: 2px; background: var(--line) } .prog i { display: block; height: 100%; background: var(--accent); width: 0 }
+.panel { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 0; font-size: 13px; color: var(--muted) }
+article { max-width: 36em; margin: 0 auto; padding: 32px 0 16px; font: var(--size)/1.65 var(--serif) }
+article h1 { font: 600 1.5em/1.25 var(--serif); margin: 0 0 1.2em; text-wrap: balance }
+article p { margin: 0 0 1em; hyphens: auto; overflow-wrap: break-word }
+.nav { max-width: 36em; margin: 0 auto; display: flex; justify-content: space-between; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line) }
+.nav .ib { padding: 10px 14px } .nav .ib[disabled] { visibility: hidden }
+@media (prefers-reduced-motion: reduce) { .cover { transition: none } }
+</style>
 </head>
-<body></body>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+  const $ = (t, a = {}, ...kids) => { const e = document.createElement(t); for (const k in a) k === "class" ? e.className = a[k] : k.startsWith("on") ? e[k] = a[k] : e.setAttribute(k, a[k]); e.append(...kids); return e; };
+  const store = { get(k, d) { try { const v = localStorage.getItem("os-" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+                  set(k, v) { try { localStorage.setItem("os-" + k, JSON.stringify(v)); } catch {} } };
+  const app = document.getElementById("app");
+  let catalog = [], cache = {};
+  const applyPrefs = () => { const t = store.get("theme", ""); t ? document.documentElement.dataset.theme = t : delete document.documentElement.dataset.theme;
+    document.documentElement.style.setProperty("--size", store.get("size", 19) + "px"); };
+  applyPrefs();
+
+  function library() {
+    document.title = "Open Shelf";
+    const q = $("input", { id: "q", type: "search", placeholder: "Search title or author", "aria-label": "Search books" });
+    const grid = $("div", { class: "grid" });
+    const draw = () => {
+      const s = q.value.trim().toLowerCase();
+      const list = catalog.filter(b => (b.title + " " + b.author).toLowerCase().includes(s));
+      grid.replaceChildren(...list.map(b => $("a", { class: "book", href: "#" + b.id },
+        $("div", { class: "cover", style: "--h:" + b.hue }, $("b", {}, b.title), $("i", {}, b.author)),
+        $("div", { class: "meta" }, $("strong", {}, b.title), `${b.author}, ${b.year} · ${Math.round(b.words / 250)} min`))));
+      if (!list.length) grid.append($("p", { class: "empty" }, catalog.length ? "No books match that search." : "Books are being added. Check back soon."));
+    };
+    q.oninput = draw; draw();
+    const last = store.get("last", null), lb = last && catalog.find(b => b.id === last.id);
+    app.replaceChildren(
+      $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, "Open Shelf", $("small", {}, `${catalog.length} free classics to read online`)), q),
+      ...(lb ? [$("a", { class: "continue", href: `#${lb.id}/${last.ch + 1}` }, "Continue reading ", $("strong", {}, lb.title), $("span", {}, `Chapter ${last.ch + 1} of ${lb.chapters}`))] : []),
+      grid,
+      $("footer", { class: "note" }, "All books here are in the public domain in the United States. Texts come from Project Gutenberg (gutenberg.org)."));
+  }
+
+  async function reader(id, ch) {
+    const b = catalog.find(x => x.id === id);
+    if (!b) return library();
+    app.replaceChildren($("p", { class: "empty" }, "Loading…"));
+    try { cache[id] ??= (await (await fetch(`books/${id}.txt`)).text()).split(/^# /m).slice(1).map(c => { const i = c.indexOf("\n"); return { title: c.slice(0, i), body: c.slice(i + 1) }; }); }
+    catch { app.replaceChildren($("p", { class: "empty" }, "This book could not load. Check your connection and refresh.")); return; }
+    const chs = cache[id];
+    if (ch == null) ch = (store.get("pos", {})[id] ?? 0);
+    ch = Math.max(0, Math.min(chs.length - 1, ch));
+    const pos = store.get("pos", {}); pos[id] = ch; store.set("pos", pos); store.set("last", { id, ch });
+    document.title = `${b.title} · Open Shelf`;
+    const go = n => location.hash = `${id}/${n + 1}`;
+    const sel = $("select", { class: "ib", "aria-label": "Chapter", onchange: e => go(+e.target.value) }, ...chs.map((c, i) => { const o = $("option", { value: i }, c.title); if (i === ch) o.selected = true; return o; }));
+    const panel = $("div", { class: "panel", hidden: "" }, "Text size",
+      $("button", { class: "ib", onclick: () => { store.set("size", Math.max(14, store.get("size", 19) - 1)); applyPrefs(); } }, "A−"),
+      $("button", { class: "ib", onclick: () => { store.set("size", Math.min(28, store.get("size", 19) + 1)); applyPrefs(); } }, "A+"),
+      " Theme", ...[["", "Auto"], ["light", "Light"], ["sepia", "Sepia"], ["dark", "Dark"]].map(([v, l]) => $("button", { class: "ib", onclick: () => { store.set("theme", v); applyPrefs(); } }, l)));
+    const art = $("article", {}, $("h1", {}, chs[ch].title), ...chs[ch].body.split("\n").filter(Boolean).map(p => $("p", {}, p)));
+    app.replaceChildren(
+      $("div", { class: "bar" }, $("a", { class: "ib", href: "#", "aria-label": "Back to library" }, "← Library"), $("span", { class: "t" }, b.title), sel,
+        $("button", { class: "ib", "aria-label": "Reading settings", onclick: () => panel.hidden = !panel.hidden }, "Aa")),
+      $("div", { class: "prog" }, $("i", { style: `width:${((ch + 1) / chs.length) * 100}%` })),
+      panel, art,
+      $("div", { class: "nav" },
+        $("button", { class: "ib", onclick: () => go(ch - 1), ...(ch === 0 ? { disabled: "" } : {}) }, "← Previous"),
+        $("span", { class: "meta", style: "align-self:center" }, `${ch + 1} / ${chs.length}`),
+        $("button", { class: "ib", onclick: () => go(ch + 1), ...(ch === chs.length - 1 ? { disabled: "" } : {}) }, "Next →")));
+    scrollTo(0, 0);
+  }
+
+  function route() {
+    const [id, n] = decodeURIComponent(location.hash.slice(1)).split("/");
+    id ? reader(id, n ? +n - 1 : null) : library();
+  }
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input, select, textarea")) return;
+    const m = location.hash.match(/^#([^/]+)\/(\d+)$/); if (!m) return;
+    if (e.key === "ArrowRight") location.hash = `${m[1]}/${+m[2] + 1}`;
+    if (e.key === "ArrowLeft" && +m[2] > 1) location.hash = `${m[1]}/${+m[2] - 1}`;
+  });
+  addEventListener("hashchange", route);
+  fetch("books/books.json").then(r => r.json()).then(c => { catalog = c; }).catch(() => {}).finally(route);
+})();
+</script>
+</body>
 </html>
