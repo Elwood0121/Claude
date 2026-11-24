@@ -4,139 +4,244 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Open Shelf</title>
-<meta name="description" content="Free classic books to read online.">
+<meta name="description" content="Free classic audiobooks, read by LibriVox volunteers.">
 <style>
-/* Layout: a library grid of type-only covers; the reader is a single centered column. System fonts only, so nothing extra downloads. */
+/* Layout: library grid of type-only covers -> book page with chapter list; a player bar stays pinned to the bottom. System fonts only. */
 :root {
-  --bg: #fafaf8; --surface: #ffffff; --ink: #1c2229; --muted: #5f6b76; --line: #e3e5e6; --accent: #2a5b8c;
+  --bg: #fafaf8; --surface: #ffffff; --ink: #1c2229; --muted: #5f6b76; --line: #e3e5e6; --accent: #2a5b8c; --on-accent: #ffffff;
   --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --size: 19px;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="sepia"]) {
-  --bg: #14171b; --surface: #1b1f24; --ink: #e4e6e8; --muted: #9aa4ad; --line: #2c3239; --accent: #8db8e3; color-scheme: dark } }
-:root[data-theme="dark"] { --bg: #14171b; --surface: #1b1f24; --ink: #e4e6e8; --muted: #9aa4ad; --line: #2c3239; --accent: #8db8e3; color-scheme: dark }
-:root[data-theme="sepia"] { --bg: #f3ead8; --surface: #f8f1e3; --ink: #3b2f22; --muted: #7a6a56; --line: #e0d3bb; --accent: #8a5a2b }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171b; --surface: #1c2026; --ink: #e4e6e8; --muted: #9aa4ad; --line: #2c3239; --accent: #8db8e3; --on-accent: #0e1a26; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #14171b; --surface: #1c2026; --ink: #e4e6e8; --muted: #9aa4ad; --line: #2c3239; --accent: #8db8e3; --on-accent: #0e1a26; color-scheme: dark }
 * { box-sizing: border-box }
 [hidden] { display: none !important }
-@media (max-width: 480px) { .bar .t { display: none } select.ib { flex: 1; max-width: none } }
-html { -webkit-text-size-adjust: 100% }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans);
-  padding: 0 max(16px, env(safe-area-inset-left)) 48px max(16px, env(safe-area-inset-right)) }
+  padding: 0 max(16px, env(safe-area-inset-left)) 140px max(16px, env(safe-area-inset-right)) }
 a { color: var(--accent) }
-button, select, input { font: inherit; color: inherit }
+button, input { font: inherit; color: inherit }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
 .wrap { max-width: 1040px; margin: 0 auto }
 header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 28px 0 20px }
 .brand { font: 600 26px/1 var(--serif); letter-spacing: -.01em; color: var(--ink); text-decoration: none }
 .brand small { display: block; font: 13px var(--sans); color: var(--muted); letter-spacing: 0; margin-top: 6px }
 #q { width: min(280px, 100%); padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
-.continue { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-decoration: none; color: var(--ink) }
+.continue { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 16px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-decoration: none; color: var(--ink) }
 .continue span { color: var(--muted); font-size: 13px }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 28px 20px }
-.book { text-decoration: none; color: var(--ink); display: grid; gap: 10px }
-.cover { aspect-ratio: 2/3; max-width: 100%; border-radius: 4px 8px 8px 4px; padding: 16px 14px; display: flex; flex-direction: column; justify-content: space-between;
-  color: #fff; background: hsl(var(--h) 38% 30%); box-shadow: inset 6px 0 0 rgb(0 0 0 / .18), 0 1px 2px rgb(0 0 0 / .15); transition: transform .15s }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 28px 20px }
+.book { text-decoration: none; color: var(--ink); display: grid; gap: 10px; align-content: start }
+.cover { aspect-ratio: 1; max-width: 100%; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;
+  color: #fff; background: linear-gradient(160deg, hsl(var(--h) 40% 34%), hsl(var(--h) 45% 22%)); box-shadow: 0 1px 2px rgb(0 0 0 / .15); transition: transform .15s }
 .book:hover .cover { transform: translateY(-3px) }
-.cover b { font: 600 19px/1.15 var(--serif); text-wrap: balance }
-.cover i { font: 12px var(--sans); font-style: normal; opacity: .85; letter-spacing: .04em; text-transform: uppercase }
+.cover b { font: 600 18px/1.15 var(--serif); text-wrap: balance }
+.cover i { font: 11px var(--sans); font-style: normal; opacity: .85; letter-spacing: .05em; text-transform: uppercase }
 .meta { font-size: 13px; color: var(--muted); line-height: 1.35 }
 .meta strong { display: block; color: var(--ink); font-weight: 600; font-size: 14px }
 .empty { color: var(--muted); padding: 40px 0 }
 footer.note { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px }
 
-/* reader */
-.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line) }
-.bar .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; font-size: 14px }
-.ib { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; text-decoration: none; color: var(--ink); white-space: nowrap }
-.ib:hover { background: var(--surface) }
-select.ib { max-width: 38vw }
-.prog { height: 2px; background: var(--line) } .prog i { display: block; height: 100%; background: var(--accent); width: 0 }
-.panel { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 0; font-size: 13px; color: var(--muted) }
-article { max-width: 36em; margin: 0 auto; padding: 32px 0 16px; font: var(--size)/1.65 var(--serif) }
-article h1 { font: 600 1.5em/1.25 var(--serif); margin: 0 0 1.2em; text-wrap: balance }
-article p { margin: 0 0 1em; hyphens: auto; overflow-wrap: break-word }
-.nav { max-width: 36em; margin: 0 auto; display: flex; justify-content: space-between; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line) }
-.nav .ib { padding: 10px 14px } .nav .ib[disabled] { visibility: hidden }
+/* book page */
+.back { display: inline-block; margin: 20px 0; text-decoration: none; font-size: 14px }
+.hero { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 28px; align-items: end; margin-bottom: 28px }
+.hero .cover { cursor: default } .hero .cover b { font-size: 24px }
+.hero h1 { font: 600 32px/1.15 var(--serif); margin: 0 0 6px; text-wrap: balance }
+.hero p { margin: 0 0 4px; color: var(--muted) }
+.play { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 600; cursor: pointer }
+@media (max-width: 560px) { .hero { grid-template-columns: 120px minmax(0, 1fr); gap: 16px } .hero h1 { font-size: 22px } .hero .cover b { font-size: 15px } }
+ol.chs { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line) }
+ol.chs button { width: 100%; display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left;
+  padding: 12px 6px; background: none; border: 0; border-bottom: 1px solid var(--line); cursor: pointer }
+ol.chs button:hover { background: var(--surface) }
+ol.chs .n, ol.chs .d { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums }
+ol.chs .on { color: var(--accent); font-weight: 600 }
+ol.chs .on .n { color: var(--accent) }
+
+/* player */
+.player { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface); border-top: 1px solid var(--line);
+  padding: 10px max(16px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) }
+.player .in { max-width: 1040px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center }
+.now { min-width: 0; text-decoration: none; color: var(--ink) }
+.now b, .now span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.now b { font-size: 14px } .now span { font-size: 12px; color: var(--muted) }
+.ctl { display: flex; align-items: center; gap: 4px }
+.ctl button { background: none; border: 0; padding: 8px; border-radius: 999px; cursor: pointer; line-height: 0 }
+.ctl button:hover { background: var(--bg) }
+.ctl .pp { background: var(--accent); color: var(--on-accent); padding: 10px } .ctl .pp:hover { background: var(--accent) }
+.ctl .sp { font: 600 12px var(--sans); line-height: 1; padding: 8px 6px; min-width: 3.2em }
+svg { width: 22px; height: 22px; fill: currentColor; display: block }
+.seek { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums }
+.seek input { width: 100%; accent-color: var(--accent) }
+@media (max-width: 480px) { .ctl .hide-s { display: none } }
 @media (prefers-reduced-motion: reduce) { .cover { transition: none } }
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
+
+<div class="player" id="player" hidden>
+  <div class="in">
+    <a class="now" id="now" href="#"><b id="now-t"></b><span id="now-c"></span></a>
+    <div class="ctl">
+      <button class="hide-s" id="prev" aria-label="Previous chapter"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button id="back" aria-label="Back 15 seconds"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/><text x="12" y="16.5" font-size="7" text-anchor="middle" font-family="sans-serif" font-weight="700">15</text></svg></button>
+      <button class="pp" id="pp" aria-label="Play"><svg viewBox="0 0 24 24" id="pp-i"><path d="M8 5v14l11-7z"/></svg></button>
+      <button id="fwd" aria-label="Forward 30 seconds"><svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/><text x="12" y="16.5" font-size="7" text-anchor="middle" font-family="sans-serif" font-weight="700">30</text></svg></button>
+      <button class="hide-s" id="next" aria-label="Next chapter"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+      <button class="sp" id="speed" aria-label="Playback speed">1×</button>
+    </div>
+    <div class="seek"><span id="cur">0:00</span><input type="range" id="seek" min="0" max="0" step="1" value="0" aria-label="Seek"><span id="dur">0:00</span></div>
+  </div>
+</div>
+<audio id="audio" preload="none"></audio>
+
 <script>
 (() => {
   const $ = (t, a = {}, ...kids) => { const e = document.createElement(t); for (const k in a) k === "class" ? e.className = a[k] : k.startsWith("on") ? e[k] = a[k] : e.setAttribute(k, a[k]); e.append(...kids); return e; };
+  const byId = id => document.getElementById(id);
   const store = { get(k, d) { try { const v = localStorage.getItem("os-" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
                   set(k, v) { try { localStorage.setItem("os-" + k, JSON.stringify(v)); } catch {} } };
-  const app = document.getElementById("app");
-  let catalog = [], cache = {};
-  const applyPrefs = () => { const t = store.get("theme", ""); t ? document.documentElement.dataset.theme = t : delete document.documentElement.dataset.theme;
-    document.documentElement.style.setProperty("--size", store.get("size", 19) + "px"); };
-  applyPrefs();
+  const fmt = s => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = String(s % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${x}` : `${m}:${x}`; };
+  const hm = s => { const h = Math.floor(s / 3600), m = Math.round(s % 3600 / 60); return h ? `${h} h ${m} min` : `${m} min`; };
+  const total = b => b.ch.reduce((t, c) => t + c[2], 0);
+  const cover = (b, big) => $("div", { class: "cover", style: "--h:" + b.hue }, $("b", {}, b.title), $("i", {}, b.author));
+  const app = byId("app"), audio = byId("audio");
+  let catalog = [], cur = null; // cur = { b, i }
 
+  /* ---------- views ---------- */
   function library() {
     document.title = "Open Shelf";
-    const q = $("input", { id: "q", type: "search", placeholder: "Search title or author", "aria-label": "Search books" });
+    const q = $("input", { id: "q", type: "search", placeholder: "Search title or author", "aria-label": "Search audiobooks" });
     const grid = $("div", { class: "grid" });
     const draw = () => {
       const s = q.value.trim().toLowerCase();
       const list = catalog.filter(b => (b.title + " " + b.author).toLowerCase().includes(s));
-      grid.replaceChildren(...list.map(b => $("a", { class: "book", href: "#" + b.id },
-        $("div", { class: "cover", style: "--h:" + b.hue }, $("b", {}, b.title), $("i", {}, b.author)),
-        $("div", { class: "meta" }, $("strong", {}, b.title), `${b.author}, ${b.year} · ${Math.round(b.words / 250)} min`))));
-      if (!list.length) grid.append($("p", { class: "empty" }, catalog.length ? "No books match that search." : "Books are being added. Check back soon."));
+      grid.replaceChildren(...list.map(b => $("a", { class: "book", href: "#" + b.id }, cover(b),
+        $("div", { class: "meta" }, $("strong", {}, b.title), `${b.author} · ${hm(total(b))}`))));
+      if (!list.length) grid.append($("p", { class: "empty" }, catalog.length ? "No audiobooks match that search." : "Could not load the library. Refresh to try again."));
     };
     q.oninput = draw; draw();
     const last = store.get("last", null), lb = last && catalog.find(b => b.id === last.id);
     app.replaceChildren(
-      $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, "Open Shelf", $("small", {}, `${catalog.length} free classics to read online`)), q),
-      ...(lb ? [$("a", { class: "continue", href: `#${lb.id}/${last.ch + 1}` }, "Continue reading ", $("strong", {}, lb.title), $("span", {}, `Chapter ${last.ch + 1} of ${lb.chapters}`))] : []),
+      $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, "Open Shelf", $("small", {}, `${catalog.length} free classic audiobooks`)), q),
+      ...(lb ? [$("a", { class: "continue", href: "#" + lb.id }, "Continue listening:", $("strong", {}, lb.title), $("span", {}, lb.ch[last.i][0]))] : []),
       grid,
-      $("footer", { class: "note" }, "All books here are in the public domain in the United States. Texts come from Project Gutenberg (gutenberg.org)."));
+      $("footer", { class: "note" }, "Recordings by volunteer narrators at LibriVox (librivox.org), streamed from the Internet Archive (archive.org). All recordings and books are in the public domain."));
   }
 
-  async function reader(id, ch) {
-    const b = catalog.find(x => x.id === id);
-    if (!b) return library();
-    app.replaceChildren($("p", { class: "empty" }, "Loading…"));
-    try { cache[id] ??= (await (await fetch(`books/${id}.txt`)).text()).split(/^# /m).slice(1).map(c => { const i = c.indexOf("\n"); return { title: c.slice(0, i), body: c.slice(i + 1) }; }); }
-    catch { app.replaceChildren($("p", { class: "empty" }, "This book could not load. Check your connection and refresh.")); return; }
-    const chs = cache[id];
-    if (ch == null) ch = (store.get("pos", {})[id] ?? 0);
-    ch = Math.max(0, Math.min(chs.length - 1, ch));
-    const pos = store.get("pos", {}); pos[id] = ch; store.set("pos", pos); store.set("last", { id, ch });
+  function bookPage(b) {
     document.title = `${b.title} · Open Shelf`;
-    const go = n => location.hash = `${id}/${n + 1}`;
-    const sel = $("select", { class: "ib", "aria-label": "Chapter", onchange: e => go(+e.target.value) }, ...chs.map((c, i) => { const o = $("option", { value: i }, c.title); if (i === ch) o.selected = true; return o; }));
-    const panel = $("div", { class: "panel", hidden: "" }, "Text size",
-      $("button", { class: "ib", onclick: () => { store.set("size", Math.max(14, store.get("size", 19) - 1)); applyPrefs(); } }, "A−"),
-      $("button", { class: "ib", onclick: () => { store.set("size", Math.min(28, store.get("size", 19) + 1)); applyPrefs(); } }, "A+"),
-      " Theme", ...[["", "Auto"], ["light", "Light"], ["sepia", "Sepia"], ["dark", "Dark"]].map(([v, l]) => $("button", { class: "ib", onclick: () => { store.set("theme", v); applyPrefs(); } }, l)));
-    const art = $("article", {}, $("h1", {}, chs[ch].title), ...chs[ch].body.split("\n").filter(Boolean).map(p => $("p", {}, p)));
+    const saved = store.get("pos", {})[b.id];
+    const startAt = saved ? saved.i : 0;
+    const list = $("ol", { class: "chs" }, ...b.ch.map((c, i) => $("li", {}, $("button", { "data-i": i, onclick: () => play(b, i, 0) },
+      $("span", { class: "n" }, i + 1), $("span", {}, c[0]), $("span", { class: "d" }, fmt(c[2]))))));
     app.replaceChildren(
-      $("div", { class: "bar" }, $("a", { class: "ib", href: "#", "aria-label": "Back to library" }, "← Library"), $("span", { class: "t" }, b.title), sel,
-        $("button", { class: "ib", "aria-label": "Reading settings", onclick: () => panel.hidden = !panel.hidden }, "Aa")),
-      $("div", { class: "prog" }, $("i", { style: `width:${((ch + 1) / chs.length) * 100}%` })),
-      panel, art,
-      $("div", { class: "nav" },
-        $("button", { class: "ib", onclick: () => go(ch - 1), ...(ch === 0 ? { disabled: "" } : {}) }, "← Previous"),
-        $("span", { class: "meta", style: "align-self:center" }, `${ch + 1} / ${chs.length}`),
-        $("button", { class: "ib", onclick: () => go(ch + 1), ...(ch === chs.length - 1 ? { disabled: "" } : {}) }, "Next →")));
+      $("a", { class: "back", href: "#" }, "← All audiobooks"),
+      $("div", { class: "hero" }, cover(b), $("div", {},
+        $("h1", {}, b.title),
+        $("p", {}, `${b.author}, ${b.year}`),
+        $("p", {}, `Read by ${b.reader} · ${b.ch.length} parts · ${hm(total(b))}`),
+        $("button", { class: "play", onclick: () => cur && cur.b === b ? toggle() : play(b, startAt, saved ? saved.t : 0) },
+          saved ? `▶ Resume ${b.ch[startAt][0]}` : "▶ Play from the start"))),
+      list);
+    mark();
     scrollTo(0, 0);
   }
 
-  function route() {
-    const [id, n] = decodeURIComponent(location.hash.slice(1)).split("/");
-    id ? reader(id, n ? +n - 1 : null) : library();
+  function mark() {
+    document.querySelectorAll("ol.chs button").forEach(el => el.classList.toggle("on", !!cur && location.hash.slice(1) === cur.b.id && +el.dataset.i === cur.i));
+  }
+
+  /* ---------- player ---------- */
+  function play(b, i, t) {
+    cur = { b, i };
+    audio.src = `https://archive.org/download/${b.ia}/${encodeURIComponent(b.ch[i][1])}`;
+    audio.playbackRate = store.get("speed", 1);
+    audio.currentTime = 0;
+    const startAt = t || 0;
+    if (startAt) audio.addEventListener("loadedmetadata", () => { audio.currentTime = startAt; }, { once: true });
+    audio.play().catch(() => {});
+    byId("player").hidden = false;
+    byId("now").href = "#" + b.id;
+    byId("now-t").textContent = b.title;
+    byId("now-c").textContent = `${b.ch[i][0]} · read by ${b.reader}`;
+    byId("seek").max = b.ch[i][2];
+    byId("dur").textContent = fmt(b.ch[i][2]);
+    save();
+    mark();
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: b.ch[i][0], artist: b.author, album: b.title });
+    }
+  }
+  const toggle = () => audio.paused ? audio.play().catch(() => {}) : audio.pause();
+  const skip = s => { audio.currentTime = Math.max(0, Math.min((audio.duration || 1e9) - 1, audio.currentTime + s)); };
+  const step = d => { if (cur && cur.b.ch[cur.i + d]) play(cur.b, cur.i + d, 0); };
+  function save() {
+    if (!cur) return;
+    const pos = store.get("pos", {}); pos[cur.b.id] = { i: cur.i, t: Math.floor(audio.currentTime || 0) };
+    store.set("pos", pos); store.set("last", { id: cur.b.id, i: cur.i });
+  }
+
+  const ppIcon = byId("pp-i");
+  audio.addEventListener("play", () => { audio.playbackRate = store.get("speed", 1); ppIcon.innerHTML = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>'; byId("pp").setAttribute("aria-label", "Pause"); });
+  audio.addEventListener("pause", () => { ppIcon.innerHTML = '<path d="M8 5v14l11-7z"/>'; byId("pp").setAttribute("aria-label", "Play"); save(); });
+  audio.addEventListener("ended", () => step(1));
+  audio.addEventListener("loadedmetadata", () => { byId("seek").max = Math.floor(audio.duration); byId("dur").textContent = fmt(audio.duration); });
+  let lastSave = 0, dragging = false;
+  audio.addEventListener("timeupdate", () => {
+    if (!dragging) byId("seek").value = Math.floor(audio.currentTime);
+    byId("cur").textContent = fmt(audio.currentTime);
+    if (Date.now() - lastSave > 5000) { lastSave = Date.now(); save(); }
+  });
+  audio.addEventListener("error", () => { if (cur) byId("now-c").textContent = "This chapter could not load. Check your connection and try again."; });
+  byId("seek").addEventListener("input", e => { dragging = true; byId("cur").textContent = fmt(e.target.value); });
+  byId("seek").addEventListener("change", e => { dragging = false; audio.currentTime = +e.target.value; });
+  byId("pp").onclick = toggle;
+  byId("back").onclick = () => skip(-15);
+  byId("fwd").onclick = () => skip(30);
+  byId("prev").onclick = () => step(-1);
+  byId("next").onclick = () => step(1);
+  const speeds = [0.75, 1, 1.25, 1.5, 1.75, 2];
+  const showSpeed = () => byId("speed").textContent = store.get("speed", 1) + "×";
+  byId("speed").onclick = () => { const s = speeds[(speeds.indexOf(store.get("speed", 1)) + 1) % speeds.length]; store.set("speed", s); audio.playbackRate = s; showSpeed(); };
+  showSpeed();
+  if ("mediaSession" in navigator) {
+    const ms = navigator.mediaSession;
+    ms.setActionHandler("play", () => audio.play());
+    ms.setActionHandler("pause", () => audio.pause());
+    ms.setActionHandler("seekbackward", () => skip(-15));
+    ms.setActionHandler("seekforward", () => skip(30));
+    ms.setActionHandler("previoustrack", () => step(-1));
+    ms.setActionHandler("nexttrack", () => step(1));
   }
   document.addEventListener("keydown", e => {
-    if (e.target.matches("input, select, textarea")) return;
-    const m = location.hash.match(/^#([^/]+)\/(\d+)$/); if (!m) return;
-    if (e.key === "ArrowRight") location.hash = `${m[1]}/${+m[2] + 1}`;
-    if (e.key === "ArrowLeft" && +m[2] > 1) location.hash = `${m[1]}/${+m[2] - 1}`;
+    if (!cur || e.target.matches("input, textarea") || e.target.closest("button")) return;
+    if (e.key === " ") { e.preventDefault(); toggle(); }
+    if (e.key === "ArrowLeft") skip(-15);
+    if (e.key === "ArrowRight") skip(30);
   });
+  addEventListener("pagehide", save);
+
+  /* ---------- routing ---------- */
+  function route() {
+    const b = catalog.find(x => x.id === decodeURIComponent(location.hash.slice(1)));
+    b ? bookPage(b) : library();
+  }
   addEventListener("hashchange", route);
-  fetch("books/books.json").then(r => r.json()).then(c => { catalog = c; }).catch(() => {}).finally(route);
+  fetch("books/books.json").then(r => r.json()).then(c => {
+    catalog = c;
+    // Show the last book in the player, paused, so one tap resumes it.
+    const last = store.get("last", null), b = last && catalog.find(x => x.id === last.id);
+    if (b) {
+      const p = store.get("pos", {})[b.id] || { i: last.i, t: 0 };
+      cur = { b, i: p.i };
+      audio.src = `https://archive.org/download/${b.ia}/${encodeURIComponent(b.ch[p.i][1])}`;
+      audio.addEventListener("loadedmetadata", () => { audio.currentTime = p.t; audio.playbackRate = store.get("speed", 1); }, { once: true });
+      byId("player").hidden = false; byId("now").href = "#" + b.id;
+      byId("now-t").textContent = b.title; byId("now-c").textContent = `${b.ch[p.i][0]} · read by ${b.reader}`;
+      byId("seek").max = b.ch[p.i][2]; byId("seek").value = p.t; byId("cur").textContent = fmt(p.t); byId("dur").textContent = fmt(b.ch[p.i][2]);
+    }
+  }).catch(() => {}).finally(route);
 })();
 </script>
 </body>
