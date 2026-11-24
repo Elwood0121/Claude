@@ -49,6 +49,8 @@ footer.note { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--l
 .hero p { margin: 0 0 4px; color: var(--muted) }
 .play { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 600; cursor: pointer }
 @media (max-width: 560px) { .hero { grid-template-columns: 120px minmax(0, 1fr); gap: 16px } .hero h1 { font-size: 22px } .hero .cover b { font-size: 15px } }
+.skip { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--muted); cursor: pointer }
+.skip input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0 }
 ol.chs { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line) }
 ol.chs button { width: 100%; display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left;
   padding: 12px 6px; background: none; border: 0; border-bottom: 1px solid var(--line); cursor: pointer }
@@ -104,6 +106,8 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
   const fmt = s => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = String(s % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${x}` : `${m}:${x}`; };
   const hm = s => { const h = Math.floor(s / 3600), m = Math.round(s % 3600 / 60); return h ? `${h} h ${m} min` : `${m} min`; };
   const total = b => b.ch.reduce((t, c) => t + c[2], 0);
+  // Each LibriVox file opens with a spoken notice; start past it unless the listener turns this off.
+  const introSkip = (b, i) => store.get("skip", true) && b.ch[i][2] > 120 ? (b.skip ?? 15) : 0;
   const cover = (b, big) => $("div", { class: "cover", style: "--h:" + b.hue }, $("b", {}, b.title), $("i", {}, b.author));
   const app = byId("app"), audio = byId("audio");
   let catalog = [], cur = null; // cur = { b, i }
@@ -142,10 +146,18 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
         $("p", {}, `${b.author}, ${b.year}`),
         $("p", {}, `Read by ${b.reader} · ${b.ch.length} parts · ${hm(total(b))}`),
         $("button", { class: "play", onclick: () => cur && cur.b === b ? toggle() : play(b, startAt, saved ? saved.t : 0) },
-          saved ? `▶ Resume ${b.ch[startAt][0]}` : "▶ Play from the start"))),
+          saved ? `▶ Resume ${b.ch[startAt][0]}` : "▶ Play from the start"),
+        $("label", { class: "skip" }, skipBox(), " Skip LibriVox intro"))),
       list);
     mark();
     scrollTo(0, 0);
+  }
+
+  function skipBox() {
+    const c = $("input", { type: "checkbox", id: "skip-intro" });
+    c.checked = store.get("skip", true);
+    c.onchange = () => store.set("skip", c.checked);
+    return c;
   }
 
   function mark() {
@@ -158,7 +170,7 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
     audio.src = `https://archive.org/download/${b.ia}/${encodeURIComponent(b.ch[i][1])}`;
     audio.playbackRate = store.get("speed", 1);
     audio.currentTime = 0;
-    const startAt = t || 0;
+    const startAt = Math.max(t || 0, introSkip(b, i));
     if (startAt) audio.addEventListener("loadedmetadata", () => { audio.currentTime = startAt; }, { once: true });
     audio.play().catch(() => {});
     byId("player").hidden = false;
@@ -233,7 +245,7 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
     // Show the last book in the player, paused, so one tap resumes it.
     const last = store.get("last", null), b = last && catalog.find(x => x.id === last.id);
     if (b) {
-      const p = store.get("pos", {})[b.id] || { i: last.i, t: 0 };
+      const p = { ...(store.get("pos", {})[b.id] || { i: last.i, t: 0 }) }; p.t = Math.max(p.t, introSkip(b, p.i));
       cur = { b, i: p.i };
       audio.src = `https://archive.org/download/${b.ia}/${encodeURIComponent(b.ch[p.i][1])}`;
       audio.addEventListener("loadedmetadata", () => { audio.currentTime = p.t; audio.playbackRate = store.get("speed", 1); }, { once: true });
