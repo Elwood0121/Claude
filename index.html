@@ -49,8 +49,6 @@ footer.note { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--l
 .hero p { margin: 0 0 4px; color: var(--muted) }
 .play { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 600; cursor: pointer }
 @media (max-width: 560px) { .hero { grid-template-columns: 120px minmax(0, 1fr); gap: 16px } .hero h1 { font-size: 22px } .hero .cover b { font-size: 15px } }
-.skip { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--muted); cursor: pointer }
-.skip input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0 }
 ol.chs { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line) }
 ol.chs button { width: 100%; display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left;
   padding: 12px 6px; background: none; border: 0; border-bottom: 1px solid var(--line); cursor: pointer }
@@ -105,9 +103,11 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
                   set(k, v) { try { localStorage.setItem("os-" + k, JSON.stringify(v)); } catch {} } };
   const fmt = s => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = String(s % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${x}` : `${m}:${x}`; };
   const hm = s => { const h = Math.floor(s / 3600), m = Math.round(s % 3600 / 60); return h ? `${h} h ${m} min` : `${m} min`; };
-  const total = b => b.ch.reduce((t, c) => t + c[2], 0);
-  // Each LibriVox file opens with a spoken notice; start past it unless the listener turns this off.
-  const introSkip = (b, i) => store.get("skip", true) && b.ch[i][2] > 120 ? (b.skip ?? 15) : 0;
+  // Each LibriVox file opens with a spoken notice. books.json stores where it ends (4th value); the player
+  // starts there and counts time from that point, so the notice never plays or shows.
+  const off = (b, i) => b.ch[i][3] || 0;
+  const len = c => c[2] - (c[3] || 0);
+  const total = b => b.ch.reduce((t, c) => t + len(c), 0);
   const cover = (b, big) => $("div", { class: "cover", style: "--h:" + b.hue }, $("b", {}, b.title), $("i", {}, b.author));
   const app = byId("app"), audio = byId("audio");
   let catalog = [], cur = null; // cur = { b, i }
@@ -138,7 +138,7 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
     const saved = store.get("pos", {})[b.id];
     const startAt = saved ? saved.i : 0;
     const list = $("ol", { class: "chs" }, ...b.ch.map((c, i) => $("li", {}, $("button", { "data-i": i, onclick: () => play(b, i, 0) },
-      $("span", { class: "n" }, i + 1), $("span", {}, c[0]), $("span", { class: "d" }, fmt(c[2]))))));
+      $("span", { class: "n" }, i + 1), $("span", {}, c[0]), $("span", { class: "d" }, fmt(len(c)))))));
     app.replaceChildren(
       $("a", { class: "back", href: "#" }, "← All audiobooks"),
       $("div", { class: "hero" }, cover(b), $("div", {},
@@ -146,18 +146,10 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
         $("p", {}, `${b.author}, ${b.year}`),
         $("p", {}, `Read by ${b.reader} · ${b.ch.length} parts · ${hm(total(b))}`),
         $("button", { class: "play", onclick: () => cur && cur.b === b ? toggle() : play(b, startAt, saved ? saved.t : 0) },
-          saved ? `▶ Resume ${b.ch[startAt][0]}` : "▶ Play from the start"),
-        $("label", { class: "skip" }, skipBox(), " Skip LibriVox intro"))),
+          saved ? `▶ Resume ${b.ch[startAt][0]}` : "▶ Play from the start")))),
       list);
     mark();
     scrollTo(0, 0);
-  }
-
-  function skipBox() {
-    const c = $("input", { type: "checkbox", id: "skip-intro" });
-    c.checked = store.get("skip", true);
-    c.onchange = () => store.set("skip", c.checked);
-    return c;
   }
 
   function mark() {
@@ -170,15 +162,15 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
     audio.src = `https://archive.org/download/${b.ia}/${encodeURIComponent(b.ch[i][1])}`;
     audio.playbackRate = store.get("speed", 1);
     audio.currentTime = 0;
-    const startAt = Math.max(t || 0, introSkip(b, i));
+    const startAt = Math.max(t || 0, off(b, i));
     if (startAt) audio.addEventListener("loadedmetadata", () => { audio.currentTime = startAt; }, { once: true });
     audio.play().catch(() => {});
     byId("player").hidden = false;
     byId("now").href = "#" + b.id;
     byId("now-t").textContent = b.title;
     byId("now-c").textContent = `${b.ch[i][0]} · read by ${b.reader}`;
-    byId("seek").max = b.ch[i][2];
-    byId("dur").textContent = fmt(b.ch[i][2]);
+    byId("seek").max = len(b.ch[i]); byId("seek").value = 0;
+    byId("dur").textContent = fmt(len(b.ch[i])); byId("cur").textContent = fmt(0);
     save();
     mark();
     if ("mediaSession" in navigator) {
@@ -186,7 +178,7 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
     }
   }
   const toggle = () => audio.paused ? audio.play().catch(() => {}) : audio.pause();
-  const skip = s => { audio.currentTime = Math.max(0, Math.min((audio.duration || 1e9) - 1, audio.currentTime + s)); };
+  const skip = s => { audio.currentTime = Math.max(cur ? off(cur.b, cur.i) : 0, Math.min((audio.duration || 1e9) - 1, audio.currentTime + s)); };
   const step = d => { if (cur && cur.b.ch[cur.i + d]) play(cur.b, cur.i + d, 0); };
   function save() {
     if (!cur) return;
@@ -198,16 +190,17 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
   audio.addEventListener("play", () => { audio.playbackRate = store.get("speed", 1); ppIcon.innerHTML = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>'; byId("pp").setAttribute("aria-label", "Pause"); });
   audio.addEventListener("pause", () => { ppIcon.innerHTML = '<path d="M8 5v14l11-7z"/>'; byId("pp").setAttribute("aria-label", "Play"); save(); });
   audio.addEventListener("ended", () => step(1));
-  audio.addEventListener("loadedmetadata", () => { byId("seek").max = Math.floor(audio.duration); byId("dur").textContent = fmt(audio.duration); });
+  const o = () => cur ? off(cur.b, cur.i) : 0;
+  audio.addEventListener("loadedmetadata", () => { byId("seek").max = Math.floor(audio.duration - o()); byId("dur").textContent = fmt(audio.duration - o()); });
   let lastSave = 0, dragging = false;
   audio.addEventListener("timeupdate", () => {
-    if (!dragging) byId("seek").value = Math.floor(audio.currentTime);
-    byId("cur").textContent = fmt(audio.currentTime);
+    if (!dragging) byId("seek").value = Math.floor(audio.currentTime - o());
+    byId("cur").textContent = fmt(audio.currentTime - o());
     if (Date.now() - lastSave > 5000) { lastSave = Date.now(); save(); }
   });
   audio.addEventListener("error", () => { if (cur) byId("now-c").textContent = "This chapter could not load. Check your connection and try again."; });
   byId("seek").addEventListener("input", e => { dragging = true; byId("cur").textContent = fmt(e.target.value); });
-  byId("seek").addEventListener("change", e => { dragging = false; audio.currentTime = +e.target.value; });
+  byId("seek").addEventListener("change", e => { dragging = false; audio.currentTime = +e.target.value + o(); });
   byId("pp").onclick = toggle;
   byId("back").onclick = () => skip(-15);
   byId("fwd").onclick = () => skip(30);
@@ -245,13 +238,13 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
     // Show the last book in the player, paused, so one tap resumes it.
     const last = store.get("last", null), b = last && catalog.find(x => x.id === last.id);
     if (b) {
-      const p = { ...(store.get("pos", {})[b.id] || { i: last.i, t: 0 }) }; p.t = Math.max(p.t, introSkip(b, p.i));
+      const p = { ...(store.get("pos", {})[b.id] || { i: last.i, t: 0 }) }; p.t = Math.max(p.t, off(b, p.i));
       cur = { b, i: p.i };
       audio.src = `https://archive.org/download/${b.ia}/${encodeURIComponent(b.ch[p.i][1])}`;
       audio.addEventListener("loadedmetadata", () => { audio.currentTime = p.t; audio.playbackRate = store.get("speed", 1); }, { once: true });
       byId("player").hidden = false; byId("now").href = "#" + b.id;
       byId("now-t").textContent = b.title; byId("now-c").textContent = `${b.ch[p.i][0]} · read by ${b.reader}`;
-      byId("seek").max = b.ch[p.i][2]; byId("seek").value = p.t; byId("cur").textContent = fmt(p.t); byId("dur").textContent = fmt(b.ch[p.i][2]);
+      byId("seek").max = len(b.ch[p.i]); byId("seek").value = p.t - off(b, p.i); byId("cur").textContent = fmt(p.t - off(b, p.i)); byId("dur").textContent = fmt(len(b.ch[p.i]));
     }
   }).catch(() => {}).finally(route);
 })();
