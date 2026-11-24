@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cyber Corner Homepage</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=VT323&display=swap">
+<style>
+/* Layout: a classic 3-column "table" homepage (nav | content | sidebar) on a tiled starfield, stacking to one column on phones. */
+:root {
+  --space: #000033;
+  --star: #ffffff;
+  --panel: #c0c0c0;
+  --panel-hi: #ffffff;
+  --panel-lo: #808080;
+  --ink: #000000;
+  --link: #0000ee;
+  --visited: #551a8b;
+  --hot: #ff00ff;
+  --lime: #00ff00;
+  --yellow: #ffff00;
+  --cyan: #00ffff;
+  --font-fun: "Comic Sans MS", "Comic Neue", "Chalkboard SE", cursive;
+  --font-body: Verdana, Geneva, Tahoma, sans-serif;
+  --font-serif: "Times New Roman", Times, serif;
+  --font-digit: "VT323", "Courier New", monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background-color: var(--space);
+  background-image:
+    radial-gradient(1px 1px at 10px 20px, var(--star), transparent),
+    radial-gradient(1px 1px at 60px 80px, var(--star), transparent),
+    radial-gradient(2px 2px at 110px 40px, var(--yellow), transparent),
+    radial-gradient(1px 1px at 30px 120px, var(--cyan), transparent),
+    radial-gradient(1px 1px at 140px 140px, var(--star), transparent),
+    radial-gradient(1px 1px at 90px 10px, var(--star), transparent);
+  background-size: 160px 160px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 32px;
+}
+a { color: var(--link); }
+a:visited { color: var(--visited); }
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px dotted var(--hot); outline-offset: 2px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 12px; }
+
+/* --- header --- */
+.title {
+  text-align: center;
+  font-family: var(--font-fun);
+  font-weight: 700;
+  font-size: clamp(28px, 7vw, 52px);
+  line-height: 1.1;
+  margin: 8px 0 0;
+  background: linear-gradient(90deg, #ff0000, #ff9900, #ffff00, #00ff00, #00ffff, #6666ff, #ff00ff);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+  filter: drop-shadow(3px 3px 0 #000) drop-shadow(1px 1px 0 #fff);
+  text-wrap: balance;
+}
+.subtitle {
+  text-align: center; color: var(--yellow); font-family: var(--font-serif);
+  font-style: italic; font-size: 16px; margin: 0;
+}
+.marquee {
+  overflow: hidden; white-space: nowrap;
+  background: var(--ink); border: 2px ridge var(--panel);
+  color: var(--lime); font-family: var(--font-digit); font-size: 22px; padding-block: 2px;
+}
+.marquee span { display: inline-block; padding-left: 100%; animation: scroll 22s linear infinite; }
+@keyframes scroll { to { transform: translateX(-100%); } }
+
+/* --- layout --- */
+.cols { display: grid; grid-template-columns: 170px minmax(0, 1fr) 190px; gap: 12px; align-items: start; }
+@media (max-width: 760px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+
+.box {
+  background: var(--panel);
+  border: 2px solid; border-color: var(--panel-hi) var(--panel-lo) var(--panel-lo) var(--panel-hi);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.box > h2 {
+  margin: 0; padding: 3px 6px;
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .03em;
+  font-family: var(--font-body);
+}
+.box .in { padding: 10px; display: grid; gap: 8px; }
+
+/* nav */
+.nav { display: grid; gap: 6px; }
+.btn, button {
+  display: block; text-align: center; text-decoration: none;
+  font: 700 12px var(--font-body); color: var(--ink) !important;
+  background: var(--panel); padding: 5px 8px; cursor: pointer;
+  border: 2px solid; border-color: var(--panel-hi) var(--panel-lo) var(--panel-lo) var(--panel-hi);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.btn:hover, button:hover { background: #d4d0c8; }
+.btn:active, button:active { border-color: var(--panel-lo) var(--panel-hi) var(--panel-hi) var(--panel-lo); box-shadow: none; }
+
+/* main content */
+.content { background: #fff; border: 3px double var(--hot); padding: 14px; display: grid; gap: 14px; min-width: 0; }
+.content h3 {
+  margin: 0; font-family: var(--font-fun); font-size: 22px; color: #cc0066;
+  border-bottom: 2px dashed var(--hot); padding-bottom: 2px;
+}
+.content p { margin: 0; max-width: 65ch; }
+.blink { animation: blink 1s steps(1) infinite; color: #ff0000; font-weight: 700; }
+@keyframes blink { 50% { visibility: hidden; } }
+.new { background: var(--yellow); color: #ff0000; font: 700 10px var(--font-body); padding: 0 3px; border: 1px solid #ff0000; vertical-align: middle; }
+
+.construction {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 10px; font-weight: 700;
+  background: repeating-linear-gradient(-45deg, #ffcc00 0 14px, #000 14px 28px);
+}
+.construction b { background: #ffcc00; padding: 4px 8px; border: 2px solid #000; font-family: var(--font-fun); font-size: 15px; }
+.digger { font-size: 26px; background: #ffcc00; border: 2px solid #000; padding: 0 6px; line-height: 1.3; }
+
+table.facts { border-collapse: collapse; width: 100%; font-size: 12px; }
+table.facts td { border: 1px solid #999; padding: 4px 6px; vertical-align: top; }
+table.facts td:first-child { background: #ffccff; font-weight: 700; width: 38%; }
+
+.pets { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.pet { border: 2px outset #ccc; padding: 8px; text-align: center; background: #ffffcc; font-size: 12px; }
+.pet .pic { font-size: 40px; line-height: 1.2; }
+.pet b { display: block; font-family: var(--font-fun); font-size: 15px; }
+
+hr.rainbow { border: 0; height: 4px; margin: 0; background: linear-gradient(90deg, red, orange, yellow, lime, cyan, blue, magenta); }
+
+/* guestbook */
+.gb-form { display: grid; gap: 6px; background: #eeeeff; border: 1px solid #99c; padding: 10px; }
+.gb-form label { font-weight: 700; font-size: 12px; }
+.gb-form input, .gb-form textarea {
+  width: 100%; font: 13px var(--font-body); padding: 3px;
+  border: 2px inset #ccc; background: #fff; color: var(--ink); color-scheme: light;
+}
+.gb-form .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.gb-form button { display: inline-block; }
+.gb-msg { color: #008000; font-weight: 700; font-size: 12px; }
+.entries { display: grid; gap: 8px; }
+.entry { border: 1px dotted #cc0066; padding: 6px 8px; background: #fff0f8; font-size: 12px; }
+.entry .who { font-weight: 700; color: #000080; }
+.entry .when { color: #666; font-size: 11px; }
+.entry p { margin: 4px 0 0; overflow-wrap: anywhere; }
+.sample { color: #888; font-size: 10px; font-style: italic; }
+
+/* sidebar */
+.counter { display: flex; justify-content: center; gap: 2px; }
+.counter span {
+  background: #000; color: var(--lime); font: 26px/1 var(--font-digit);
+  padding: 2px 4px; border: 1px solid #444; font-variant-numeric: tabular-nums;
+}
+.center { text-align: center; }
+.small { font-size: 11px; }
+.links { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.webring { text-align: center; font-size: 11px; border: 2px groove #fff; padding: 6px; background: #ddd; }
+.webring .ring { display: flex; justify-content: space-between; gap: 4px; margin-top: 4px; }
+
+/* footer */
+.badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.badge {
+  width: 88px; height: 31px; display: grid; place-items: center; text-align: center;
+  font: 700 9px/1.1 var(--font-body); border: 1px solid #fff; text-transform: uppercase; letter-spacing: .04em;
+}
+.b1 { background: linear-gradient(#ff6600, #993300); color: #fff; }
+.b2 { background: #000; color: var(--lime); font-family: var(--font-digit); font-size: 15px; }
+.b3 { background: linear-gradient(#ffffff, #9999ff); color: #000080; }
+.b4 { background: repeating-linear-gradient(90deg, #ff00ff 0 4px, #cc00cc 4px 8px); color: #fff; text-shadow: 1px 1px 0 #000; }
+.b5 { background: #008080; color: var(--yellow); }
+.footer { text-align: center; color: #ccc; font-size: 11px; display: grid; gap: 6px; }
+.footer .best { color: var(--cyan); font-family: var(--font-serif); font-size: 13px; }
+
+.sparkle { position: fixed; pointer-events: none; font-size: 14px; z-index: 50; animation: fall .9s ease-out forwards; }
+@keyframes fall { to { transform: translateY(26px) scale(.3); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee span { animation: none; padding-left: 0; }
+  .blink { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1 class="title">~*~ Welcome 2 the Cyber Corner ~*~</h1>
+    <p class="subtitle">a lil' piece of the World Wide Web, est. 2001</p>
+  </header>
+
+  <div class="marquee" aria-label="Scrolling announcement"><span>*** THANX 4 VISITING!!! *** Sign my guestbook b4 u leave!! *** New pet pics added 11/24 *** This site is ALWAYS under construction *** Don't forget 2 bookmark me (Ctrl+D) ***</span></div>
+
+  <div class="cols">
+
+    <!-- LEFT: nav -->
+    <nav class="box" aria-label="Site navigation">
+      <h2>:: NAVIGATION ::</h2>
+      <div class="in nav">
+        <a class="btn" href="#home">Home</a>
+        <a class="btn" href="#about">About Me</a>
+        <a class="btn" href="#pets">My Pets <span class="new">NEW!</span></a>
+        <a class="btn" href="#guestbook">Guestbook</a>
+        <a class="btn" href="#links">Kool Links</a>
+        <button type="button" id="midi">&#9835; Play MIDI</button>
+        <p class="small center" id="midi-status" style="margin:0">Now playing: nothing</p>
+      </div>
+    </nav>
+
+    <!-- CENTER: content -->
+    <main class="content" id="home">
+      <div class="construction" role="note">
+        <span class="digger" aria-hidden="true">&#128679;</span>
+        <b>UNDER CONSTRUCTION</b>
+        <span class="digger" aria-hidden="true">&#128679;</span>
+      </div>
+
+      <section>
+        <h3>Hello and welcome!!</h3>
+        <p>Hi! You have found my homepage. I made it all by myself in Notepad, so please excuse the mess. Here you can learn about me, meet my pets, and check out the coolest links on the whole Internet. <span class="blink">Don't 4get 2 sign the guestbook!</span></p>
+      </section>
+
+      <hr class="rainbow">
+
+      <section id="about">
+        <h3>About Me</h3>
+        <table class="facts">
+          <tr><td>Screen name</td><td>xX_CyberKid_Xx</td></tr>
+          <tr><td>Location</td><td>Planet Earth (the 3rd rock from the sun)</td></tr>
+          <tr><td>Fave band</td><td>Whatever is on the radio right now</td></tr>
+          <tr><td>Fave food</td><td>Pizza bagels &amp; Dunkaroos</td></tr>
+          <tr><td>Hobbies</td><td>Making websites, burning mix CDs, staying up late in chat rooms</td></tr>
+          <tr><td>Connection</td><td>56k dial-up (pls don't pick up the phone!!)</td></tr>
+        </table>
+      </section>
+
+      <hr class="rainbow">
+
+      <section id="pets">
+        <h3>My Pets</h3>
+        <div class="pets">
+          <div class="pet"><div class="pic" aria-hidden="true">&#128049;</div><b>Mr. Whiskers</b>Likes: napping on the keyboard. Has deleted my homework twice.</div>
+          <div class="pet"><div class="pic" aria-hidden="true">&#128054;</div><b>Biscuit</b>Likes: squeaky toys, barking at the mailman, digging.</div>
+          <div class="pet"><div class="pic" aria-hidden="true">&#128032;</div><b>Bubbles</b>A goldfish. Swims in circles. Very good at it.</div>
+        </div>
+      </section>
+
+      <hr class="rainbow">
+
+      <section id="guestbook">
+        <h3>Guestbook</h3>
+        <form class="gb-form" id="gb-form">
+          <label for="gb-name">Your name:</label>
+          <input id="gb-name" maxlength="40" required placeholder="e.g. SkaterGrrl99">
+          <label for="gb-msg">Your message:</label>
+          <textarea id="gb-msg" rows="3" maxlength="300" required placeholder="Cool site!!"></textarea>
+          <div class="row">
+            <button type="submit">Sign Guestbook!</button>
+            <button type="reset">Clear</button>
+            <span class="gb-msg" id="gb-status" role="status"></span>
+          </div>
+        </form>
+        <p class="small" style="margin:6px 0">Entries you sign are saved in your own browser only.</p>
+        <div class="entries" id="entries"></div>
+      </section>
+    </main>
+
+    <!-- RIGHT: sidebar -->
+    <aside style="display:grid;gap:12px">
+      <div class="box">
+        <h2>:: HIT COUNTER ::</h2>
+        <div class="in center">
+          <div class="counter" id="counter" aria-live="polite"></div>
+          <span class="small">visitors since 2001</span>
+        </div>
+      </div>
+
+      <div class="box" id="links">
+        <h2>:: KOOL LINKS ::</h2>
+        <div class="in">
+          <ul class="links">
+            <li><a href="https://en.wikipedia.org/wiki/GeoCities" target="_blank" rel="noopener">GeoCities history</a></li>
+            <li><a href="https://en.wikipedia.org/wiki/Webring" target="_blank" rel="noopener">What's a webring?</a></li>
+            <li><a href="https://en.wikipedia.org/wiki/Web_counter" target="_blank" rel="noopener">All about hit counters</a></li>
+            <li><a href="https://en.wikipedia.org/wiki/Marquee_element" target="_blank" rel="noopener">The &lt;marquee&gt; tag</a></li>
+            <li><a href="https://en.wikipedia.org/wiki/Under_construction" target="_blank" rel="noopener">Under construction!</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="webring">
+        <b>&#9733; The Retro Web Ring &#9733;</b><br>
+        This site is a proud member!
+        <div class="ring">
+          <a href="#home">&laquo; Prev</a><a href="#home">Random</a><a href="#home">Next &raquo;</a>
+        </div>
+      </div>
+
+      <div class="box">
+        <h2>:: POLL ::</h2>
+        <div class="in small" id="poll">
+          <b>Best Y2K snack?</b>
+          <label><input type="radio" name="poll" id="p1" value="Gushers"> Gushers</label>
+          <label><input type="radio" name="poll" id="p2" value="Bagel Bites"> Bagel Bites</label>
+          <label><input type="radio" name="poll" id="p3" value="Lunchables"> Lunchables</label>
+          <span id="poll-result" role="status"></span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="footer">
+    <div class="badges" aria-label="Site badges">
+      <div class="badge b1">Made with<br>Notepad</div>
+      <div class="badge b2">Y2K OK!</div>
+      <div class="badge b3">HTML 4.01<br>Valid-ish</div>
+      <div class="badge b4">Get a<br>Homepage!</div>
+      <div class="badge b5">800 x 600<br>Optimized</div>
+    </div>
+    <span class="best">Best viewed at 800x600 resolution with 16-bit color</span>
+    <span>&copy; 2001-2026 The Cyber Corner. No frames were harmed in the making of this site.</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  function load(key, fallback) { try { var v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch (e) { return fallback; } }
+  function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+
+  // Hit counter
+  var hits = load("cc-hits", 13370) + 1;
+  save("cc-hits", hits);
+  var c = document.getElementById("counter");
+  String(hits).padStart(7, "0").split("").forEach(function (d) {
+    var s = document.createElement("span"); s.textContent = d; c.appendChild(s);
+  });
+
+  // Guestbook
+  var samples = [
+    { name: "SkaterGrrl99", msg: "OMG ur cat is sooo cute!!! luv the site, sign mine 2!!", when: "08/14/2001", sample: true },
+    { name: "DJ_Pixel", msg: "Kewl midi music d00d. Added u 2 my links page.", when: "03/02/2002", sample: true }
+  ];
+  var mine = load("cc-guestbook", []);
+  var list = document.getElementById("entries");
+  function render() {
+    list.innerHTML = "";
+    mine.concat(samples).forEach(function (e) {
+      var d = document.createElement("div"); d.className = "entry";
+      var who = document.createElement("span"); who.className = "who"; who.textContent = e.name;
+      var when = document.createElement("span"); when.className = "when"; when.textContent = " wrote on " + e.when;
+      var p = document.createElement("p"); p.textContent = e.msg;
+      d.append(who, when, p);
+      if (e.sample) { var s = document.createElement("div"); s.className = "sample"; s.textContent = "(example entry)"; d.appendChild(s); }
+      list.appendChild(d);
+    });
+  }
+  render();
+  document.getElementById("gb-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var n = document.getElementById("gb-name"), m = document.getElementById("gb-msg");
+    var name = n.value.trim(), msg = m.value.trim();
+    if (!name || !msg) return;
+    var dt = new Date();
+    var when = String(dt.getMonth() + 1).padStart(2, "0") + "/" + String(dt.getDate()).padStart(2, "0") + "/" + dt.getFullYear();
+    mine.unshift({ name: name, msg: msg, when: when });
+    save("cc-guestbook", mine);
+    render();
+    n.value = ""; m.value = "";
+    document.getElementById("gb-status").textContent = "Thanx 4 signing!!";
+  });
+
+  // Poll
+  document.querySelectorAll('#poll input').forEach(function (r) {
+    r.addEventListener("change", function () {
+      document.getElementById("poll-result").textContent = "U voted 4 " + r.value + "! Results coming soon.";
+    });
+  });
+
+  // MIDI-style tune via Web Audio (starts only on click)
+  var ctx = null, playing = false, timer = null;
+  var notes = [523, 659, 784, 659, 698, 880, 784, 0, 587, 698, 880, 698, 659, 784, 523, 0];
+  var btn = document.getElementById("midi"), status = document.getElementById("midi-status");
+  function tick(i) {
+    if (!playing) return;
+    var f = notes[i % notes.length];
+    if (f) {
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "square"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.06, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.22);
+    }
+    timer = setTimeout(function () { tick(i + 1); }, 220);
+  }
+  btn.addEventListener("click", function () {
+    try {
+      if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      playing = !playing;
+      if (playing) { ctx.resume(); tick(0); btn.innerHTML = "&#9632; Stop MIDI"; status.textContent = "Now playing: cybertune.mid"; }
+      else { clearTimeout(timer); btn.innerHTML = "&#9835; Play MIDI"; status.textContent = "Now playing: nothing"; }
+    } catch (e) { status.textContent = "Ur browser can't play sound :("; }
+  });
+
+  // Cursor sparkle trail
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    var last = 0, glyphs = ["✦", "✧", "⋆", "★"], colors = ["#ff0", "#0ff", "#f0f", "#fff"];
+    document.addEventListener("pointermove", function (e) {
+      var now = Date.now(); if (now - last < 45) return; last = now;
+      var s = document.createElement("span"); s.className = "sparkle";
+      s.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
+      s.style.color = colors[Math.floor(Math.random() * colors.length)];
+      s.style.left = (e.clientX + 6) + "px"; s.style.top = (e.clientY + 6) + "px";
+      document.body.appendChild(s);
+      setTimeout(function () { s.remove(); }, 900);
+    });
+  }
+})();
+</script>
+</body>
+</html>
