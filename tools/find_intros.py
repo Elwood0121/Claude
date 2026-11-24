@@ -37,40 +37,37 @@ def words(model, audio):
 
 
 def intro_end(ws):
-    """Return the time to start playback, or 0 if no notice was heard."""
+    """Return the time to start playback, or 0 if no notice was heard.
+
+    Long notice:  "This is a LibriVox recording. All LibriVox recordings are in the public domain.
+                   For more information, or to volunteer, please visit librivox.org."
+    Short notice: "This LibriVox recording is in the public domain."
+    The recognizer often mishears "LibriVox", so this keys on "domain", "visit" and "org".
+    """
     text = [w["word"] for w in ws]
-    # The notice ends with "...please visit librivox dot org". The recognizer may mishear "librivox", so key on "org"
-    # (or "visit" + up to 4 words) and require the notice's earlier words to appear before it.
-    end = None
-    for i, w in enumerate(text):
-        if ws[i]["start"] > 50:
-            break
-        if w == "org" and any(t in ("domain", "recording", "recordings", "volunteer", "visit") for t in text[max(0, i - 30):i]):
-            end = i
-            break
-    if end is None:
-        for i, w in enumerate(text):
-            if w == "visit" and ws[i]["start"] < 50:
-                end = min(i + 4, len(ws) - 1)
-                break
-    if end is None:
-        return 0
-    # Some readers spell the address out again ("that's L-I-B-R-I-V-O-X dot org"): use the last "org" close by.
-    for j in range(end + 1, len(ws)):
-        if ws[j]["start"] > ws[end]["end"] + 12:
+    d = next((i for i, w in enumerate(text) if w == "domain" and ws[i]["start"] < 50), None)
+    if d is None:
+        d = next((i for i, w in enumerate(text) if w == "org" and ws[i]["start"] < 50
+                  and any(t in ("recording", "recordings", "volunteer", "visit") for t in text[max(0, i - 30):i])), None)
+        if d is None:
+            return 0
+    end = d
+    # Follow on through "...please visit librivox dot org" (and a spelled-out repeat of the address).
+    for j in range(d + 1, len(ws)):
+        if ws[j]["start"] > ws[end]["end"] + 8:
             break
         if text[j] == "org":
             end = j
-    # Also drop a "Read by ..." / "Recorded by ..." credit that follows straight on, up to its first real pause.
-    if end + 1 < len(ws) and text[end + 1] in ("read", "recorded", "recording", "reading") and ws[end + 1]["start"] - ws[end]["end"] < 2.5:
-        j = end + 1
-        while j + 1 < len(ws) and ws[j + 1]["start"] - ws[j]["end"] < 0.45 and ws[j + 1]["start"] < ws[end + 1]["start"] + 10:
-            j += 1
-        if ws[j]["end"] < ws[end + 1]["start"] + 10:
-            end = j
+    if end == d:
+        v = next((j for j in range(d + 1, min(d + 12, len(ws))) if text[j] == "visit"), None)
+        if v is not None:
+            # Address garbled: take everything up to the first clear pause after "visit".
+            end = v
+            while end + 1 < len(ws) and ws[end + 1]["start"] - ws[end]["end"] < 0.35 and end - v < 6:
+                end += 1
     stop = ws[end]["end"]
     nxt = ws[end + 1]["start"] if end + 1 < len(ws) else stop + 0.6
-    # Start in the middle of the pause after "org", so the cut lands in silence.
+    # Start in the middle of the pause after the notice, so the cut lands in silence.
     return round(min(stop + (nxt - stop) / 2, stop + 0.8), 2)
 
 
@@ -98,7 +95,7 @@ def main():
                 c.append(t)
                 found += 1
             if a.show:
-                print(f"  {c[0]}: start at {t}s | " + " ".join(w["word"] for w in ws if w["start"] < (t or 25) + 4))
+                print(f"  {c[0]}: start at {t}s | ... " + " ".join(w["word"] for w in ws if (t or 25) - 3 < w["start"] < (t or 25) + 4) + " ...")
         print(f"{b['title']}: notice found in {found} of {len(b['ch'])} chapters", flush=True)
         CATALOG.write_text("[\n" + ",\n".join(json.dumps(x, ensure_ascii=False, separators=(",", ":")) for x in cat) + "\n]\n")
 
