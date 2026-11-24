@@ -33,6 +33,8 @@ header.top { display: flex; align-items: baseline; justify-content: space-betwee
 .book { text-decoration: none; color: var(--ink); display: grid; gap: 10px; align-content: start }
 .cover { aspect-ratio: 1; max-width: 100%; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;
   color: #fff; background: linear-gradient(160deg, hsl(var(--h) 40% 34%), hsl(var(--h) 45% 22%)); box-shadow: 0 1px 2px rgb(0 0 0 / .15); transition: transform .15s }
+.cover { position: relative; overflow: hidden }
+.cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: hsl(var(--h) 40% 30%) }
 .book:hover .cover { transform: translateY(-3px) }
 .cover b { font: 600 18px/1.15 var(--serif); text-wrap: balance }
 .cover i { font: 11px var(--sans); font-style: normal; opacity: .85; letter-spacing: .05em; text-transform: uppercase }
@@ -108,7 +110,9 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
   const off = (b, i) => b.ch[i][3] || 0;
   const len = c => c[2] - (c[3] || 0);
   const total = b => b.ch.reduce((t, c) => t + len(c), 0);
-  const cover = (b, big) => $("div", { class: "cover", style: "--h:" + b.hue }, $("b", {}, b.title), $("i", {}, b.author));
+  // Cover art streams from archive.org; the colored title box underneath shows if the picture can't load.
+  const cover = b => $("div", { class: "cover", style: "--h:" + b.hue }, $("b", {}, b.title), $("i", {}, b.author),
+    $("img", { src: `https://archive.org/services/img/${b.ia}`, alt: "", loading: "lazy", decoding: "async", onerror: e => e.target.remove() }));
   const app = byId("app"), audio = byId("audio");
   let catalog = [], cur = null; // cur = { b, i }
 
@@ -146,7 +150,7 @@ svg { width: 22px; height: 22px; fill: currentColor; display: block }
         $("p", {}, `${b.author}, ${b.year}`),
         $("p", {}, `Read by ${b.reader} · ${b.ch.length} parts · ${hm(total(b))}`),
         $("button", { class: "play", onclick: () => cur && cur.b === b ? toggle() : play(b, startAt, saved ? saved.t : 0) },
-          saved ? `▶ Resume ${b.ch[startAt][0]}` : "▶ Play from the start")))),
+          saved ? `▶ Resume ${b.ch[startAt][0]}` : "▶ Play from the start"))),
       list);
     mark();
     scrollTo(0, 0);
