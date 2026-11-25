@@ -2,7 +2,7 @@
 """Add a free LibriVox audiobook to The Listening Library.
 
 Usage:
-  python3 tools/add_audiobook.py <archive.org identifier> <slug> "<Title>" "<Author>" <year>
+  python3 tools/add_audiobook.py <archive.org identifier> <slug> "<Title>" "<Author>" [year]
 
 Find identifiers by searching the "librivoxaudio" collection on archive.org.
 Only the chapter list goes into books/books.json; the audio itself streams
@@ -27,9 +27,10 @@ def seconds(v):
 
 
 def main():
-    if len(sys.argv) != 6:
+    if len(sys.argv) not in (5, 6):
         sys.exit(__doc__)
-    ia, slug, title, author, year = sys.argv[1:]
+    ia, slug, title, author = sys.argv[1:5]
+    year = sys.argv[5] if len(sys.argv) == 6 else 0  # 0 = unknown
     with urllib.request.urlopen(f"https://archive.org/metadata/{ia}", timeout=60) as r:
         meta = json.load(r)
     if not meta.get("files"):
@@ -70,7 +71,7 @@ def main():
     cat = json.loads(CATALOG.read_text()) if CATALOG.exists() else []
     cat = [b for b in cat if b["id"] != slug]
     cat.append({
-        "id": slug, "title": title, "author": author, "year": int(year), "reader": reader, "ia": ia,
+        "id": slug, "title": title, "author": author, **({"year": int(year)} if int(year) else {}), "reader": reader, "ia": ia,
         "hue": int(hashlib.md5(slug.encode()).hexdigest(), 16) % 360,
         **({"cover": covers[0]["name"]} if covers else {}), "ch": chapters,
     })

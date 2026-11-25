@@ -380,7 +380,7 @@ footer.note .row svg { width: 26px; height: 26px }
       $("a", { class: "back", href: "#free" }, "← Free classics"),
       $("div", { class: "hero" }, art$(ART.bfly, "bfly"), cover(b), $("div", {},
         $("h1", {}, b.title),
-        $("p", {}, `${b.author}, ${b.year}`),
+        $("p", {}, b.year ? `${b.author}, ${b.year}` : b.author),
         $("p", {}, `Read by ${b.reader} · ${b.ch.length} parts · ${hm(total(b))}`),
         $("button", { class: "play", onclick: () => cur && cur.b === b ? toggle() : play(b, startAt, saved ? saved.t : 0) },
           saved ? `▶ Resume ${b.ch[startAt][0]}` : "▶ Play from the start"))),
