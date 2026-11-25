@@ -69,7 +69,7 @@ def intro_end(ws):
                 end += 1
     # Then skip ahead to where the reader announces the chapter ("Chapter one...", "Stave one...") and start just before it.
     for k in range(end + 1, len(ws)):
-        if ws[k]["start"] > ws[end]["end"] + 25:
+        if ws[k]["start"] > ws[end]["end"] + 45:
             break
         if text[k] in ANNOUNCE:
             if text[k - 1] in ("the", "a") and k - 1 > end and ws[k]["start"] - ws[k - 1]["end"] < 0.3:
