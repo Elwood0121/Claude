@@ -230,6 +230,9 @@ footer.note .row svg { width: 26px; height: 26px }
 .top-item { position: relative; display: grid; gap: 8px; align-content: start; text-decoration: none; color: var(--ink) }
 .top-item .pic { aspect-ratio: 2 / 3; border-radius: 16px; overflow: hidden; border: 3px solid var(--surface); background: var(--line);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 20%, transparent) }
+.top-item .pic { position: relative }
+.top-item .ready { position: absolute; left: 6px; bottom: 6px; padding: 3px 9px; border-radius: 999px; background: var(--leaf); color: #fff;
+  font: 700 11px var(--serif); letter-spacing: .02em; box-shadow: 0 2px 6px rgb(0 0 0 / .2) }
 .top-item .pic img { width: 100%; height: 100%; object-fit: cover; display: block }
 .top-item .rank { position: absolute; top: -6px; left: -6px; min-width: 28px; height: 28px; padding: 0 6px; display: grid; place-items: center;
   border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 700 14px var(--serif); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 70%, #000) }
@@ -360,7 +363,7 @@ footer.note .row svg { width: 26px; height: 26px }
     app.replaceChildren(
       $("header", { class: "top" }, $("a", { class: "brand", href: "#free" }, art$(ART.flower()).firstChild, "Free classics", $("small", {}, `${catalog.length} audiobooks you can play right here`)), q),
       garden(),
-      $("a", { class: "to-top", href: "#" }, art$(ART.flower("#fff")).firstChild, $("span", {}, "\u2190 Back to your library", $("small", {}, "Search 6,000+ audiobooks by category · opens in Libby"))),
+      $("a", { class: "to-top", href: "#" }, art$(ART.flower("#fff")).firstChild, $("span", {}, "\u2190 Back to your library", $("small", {}, "Search 6,000+ audiobooks by category"))),
       ...(lb ? [$("a", { class: "continue", href: "#" + lb.id }, art$(ART.lady).firstChild, "Continue listening:", $("strong", {}, lb.title), $("span", {}, lb.ch[last.i][0]))] : []),
       grid,
       ...(elsewhere.length ? [elsewhereSection()] : []),
@@ -449,8 +452,8 @@ footer.note .row svg { width: 26px; height: 26px }
         .finally(() => { ids.forEach(id => asking.delete(id)); if ((location.hash === "" || location.hash === "#" || location.hash === "#libby")) draw(); });
     };
     const demand = $("section", { class: "demand" },
-      $("h2", {}, "Popular on demand"),
-      $("p", {}, "Favorite authors your library often lends on demand. Tap a name to see their books in Libby with your card."),
+      $("h2", {}, "Fan favorites"),
+      $("p", {}, "Tap an author to see all their books, including ones that aren\u2019t in the list below."),
       $("div", { class: "chips" }, ...ON_DEMAND.map(n => $("a", { class: "chip", href: `https://libbyapp.com/search/${lib.library}/search/query-${encodeURIComponent(n)}/page-1`, target: "_blank", rel: "noopener" }, n))));
     const inLibby = $("a", { class: "in-libby", target: "_blank", rel: "noopener" });
     const grid = $("div", { class: "top-grid" });
@@ -497,14 +500,15 @@ footer.note .row svg { width: 26px; height: 26px }
       count.textContent = (availFailed && lf.noWait ? "Couldn\u2019t check availability right now, so showing all. " : "") + (fuzzy ? "No exact match. Close spellings: " : "") +
         (lf.noWait && !availFailed ? (pending ? `Checking which are available\u2026 ${n} so far` : `${n.toLocaleString()}${list.noWaitTotal == null ? "+" : ""} with no wait`) : `${n.toLocaleString()} audiobook${n === 1 ? "" : "s"}`) + (lf.sub ? ` in ${(SPECIAL.find(([, ns]) => ns.map(n => byName[n]).join("+") === lf.sub) || [lf.sub.split("+").map(id => lib.subjects[id]).join(" + ")])[0]}` : "");
       grid.replaceChildren(...list.slice(0, lf.shown).map(x => $("a", { class: "top-item", href: `https://libbyapp.com/library/${lib.library}/everything/page-1/${x[0]}`, target: "_blank", rel: "noopener" },
-        $("span", { class: "pic" }, ...(x[3] ? [$("img", { src: "https://img1.od-cdn.com/ImageType-150/" + x[3], alt: "", loading: "lazy", decoding: "async", onerror: e => e.target.remove() })] : [])),
+        $("span", { class: "pic" }, ...(x[3] ? [$("img", { src: "https://img1.od-cdn.com/ImageType-150/" + x[3], alt: "", loading: "lazy", decoding: "async", onerror: e => e.target.remove() })] : []),
+          ...(avail.get(x[0]) ? [$("span", { class: "ready" }, "Ready now")] : [])),
         $("b", {}, x[1]), $("small", {}, x[2] + (x[5] ? ` · ${hm(x[5] * 60)}` : "")))));
       if (!list.length && pending) grid.append($("p", { class: "empty" }, "Checking your library\u2026"));
-      else if (!list.length) grid.append($("p", { class: "empty" }, "Not in this list. Your library may still lend it on demand: tap \u201cSearch in Libby\u201d above to check with your card."));
+      else if (!list.length) grid.append($("p", { class: "empty" }, "Not in this list yet. Tap \u201cSearch everywhere\u201d above to find it."));
       moreBtn.hidden = lf.noWait && !availFailed ? (pending || (list.noWaitTotal != null && list.length <= lf.shown)) : list.length <= lf.shown;
       inLibby.hidden = !lf.q.trim();
       inLibby.href = `https://libbyapp.com/search/${lib.library}/search/query-${encodeURIComponent(lf.q.trim())}/page-1`;
-      inLibby.replaceChildren($("b", {}, `Search \u201c${lf.q.trim()}\u201d in Libby`), $("small", {}, "Also finds books your library lends on demand, which only show when you\u2019re signed in"));
+      inLibby.replaceChildren($("b", {}, `Search everywhere for \u201c${lf.q.trim()}\u201d`), $("small", {}, "Finds even more books, like ones lent on demand"));
     };
     q.oninput = () => { lf.q = q.value; lf.shown = 60; draw(); };
     more.onchange = () => { lf.sub = more.value; lf.shown = 60; draw(); };
@@ -512,13 +516,13 @@ footer.note .row svg { width: 26px; height: 26px }
     moreBtn.onclick = () => { lf.shown += 60; draw(); };
     const updated = new Date(lib.updated + "T12:00").toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
     app.replaceChildren(
-      $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, art$(ART.flower()).firstChild, "The Listening Library", $("small", {}, "Your library\u2019s audiobooks on Libby")),
+      $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, art$(ART.flower()).firstChild, "The Listening Library", $("small", {}, "Find your next favorite listen")),
         $("a", { class: "free-pill", href: "#free" }, art$(ART.lady).firstChild, "Free classics")),
       garden(),
       $("div", { class: "filters" }, q, $("div", { class: "selects" }, more, sort)), noWait, chips, inLibby, count, grid, moreBtn,
       demand,
       $("a", { class: "to-top", href: "#free" }, art$(ART.flower("#fff")).firstChild, $("span", {}, `${catalog.length || 14} free classics you can play right here`, $("small", {}, "Dracula, Alice in Wonderland, Pride and Prejudice and more"))),
-      $("p", { class: "lib-note" }, `Every audiobook the Tampa Bay Library Consortium owns. Tap one to open it in Libby, where you can borrow it or place a hold. List updated ${updated}.`));
+      $("p", { class: "lib-note" }, `Audiobooks from the Tampa Bay Library Consortium, free with your library card. Tapping a book opens the Libby app to borrow it. Updated ${updated}.`));
     draw();
     scrollTo(0, 0);
   }
