@@ -72,6 +72,8 @@ def intro_end(ws):
         if ws[k]["start"] > ws[end]["end"] + 25:
             break
         if text[k] in ANNOUNCE:
+            if text[k - 1] in ("the", "a") and k - 1 > end and ws[k]["start"] - ws[k - 1]["end"] < 0.3:
+                k -= 1  # keep "The" in "The Adventure of ..."
             prev = ws[k - 1]["end"]
             return round(max(prev + (ws[k]["start"] - prev) / 2, ws[k]["start"] - 0.4), 2)
     stop = ws[end]["end"]
