@@ -11,10 +11,10 @@ each chapter in books/books.json. The player starts chapters there.
 Needs: ffmpeg, the `vosk` Python package and a Vosk English model folder.
   python3 tools/find_intros.py --model /path/to/vosk-model-small-en-us-0.15 [book-id ...]
 """
-import argparse, json, subprocess, sys, urllib.request
+import argparse, json, os, subprocess, sys, urllib.request
 from pathlib import Path
 
-CATALOG = Path(__file__).resolve().parent.parent / "books" / "books.json"
+CATALOG = Path(os.environ.get("CATALOG") or Path(__file__).resolve().parent.parent / "books" / "books.json")
 CACHE = Path.home() / ".cache" / "openshelf-intros"  # what the recognizer heard, so reruns skip the download
 LISTEN = 75  # seconds of audio to scan
 ANNOUNCE = {"chapter", "chapters", "stave", "letter", "adventure", "book", "part", "section", "introduction", "preface", "conclusion", "prologue", "epilogue"}
