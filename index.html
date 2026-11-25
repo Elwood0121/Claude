@@ -188,6 +188,20 @@ footer.note .row svg { width: 26px; height: 26px }
 .resume .r-tx span { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .9 }
 @keyframes pop { from { transform: translate(-50%, 20px); opacity: 0 } }
 @media (prefers-reduced-motion: reduce) { .resume { animation: none } }
+
+/* Top 100 at your library (links into Libby) */
+.to-top { display: flex; align-items: center; gap: 12px; margin: 0 0 24px; padding: 14px 18px; border-radius: 22px; text-decoration: none;
+  background: var(--accent); color: var(--on-accent); font: 600 17px var(--serif); box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 70%, #000) }
+.to-top svg { width: 30px; height: 30px; flex: none } .to-top small { display: block; font: 600 13px var(--sans); opacity: .9 }
+.top-head h1 { font: 700 30px/1.1 var(--serif); color: var(--accent-ink); margin: 0 0 6px } .top-head p { margin: 0 0 20px; color: var(--muted) }
+.top-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 20px 12px }
+.top-item { position: relative; display: grid; gap: 8px; align-content: start; text-decoration: none; color: var(--ink) }
+.top-item .pic { aspect-ratio: 2 / 3; border-radius: 16px; overflow: hidden; border: 3px solid var(--surface); background: var(--line);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 20%, transparent) }
+.top-item .pic img { width: 100%; height: 100%; object-fit: cover; display: block }
+.top-item .rank { position: absolute; top: -6px; left: -6px; min-width: 28px; height: 28px; padding: 0 6px; display: grid; place-items: center;
+  border-radius: 999px; background: var(--accent); color: var(--on-accent); font: 700 14px var(--serif); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 70%, #000) }
+.top-item b { font: 600 13px/1.25 var(--serif) } .top-item small { color: var(--muted); font-size: 12px }
 @media (max-width: 560px) { .hero h1 { font-size: 24px } .hero .bfly { width: 36px; height: 32px; top: -26px } }
 @media (prefers-reduced-motion: reduce) {
   .brand svg, .garden .cat, .garden .cat svg, .garden .bee, .hero .bfly { animation: none }
@@ -314,6 +328,7 @@ footer.note .row svg { width: 26px; height: 26px }
     app.replaceChildren(
       $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, art$(ART.flower()).firstChild, "The Listening Library", $("small", {}, `${catalog.length} free classic audiobooks`)), q),
       garden(),
+      $("a", { class: "to-top", href: "#libby-top" }, art$(ART.flower("#fff")).firstChild, $("span", {}, "Top 100 audiobooks at your library", $("small", {}, "Opens in the Libby app"))),
       ...(lb ? [$("a", { class: "continue", href: "#" + lb.id }, art$(ART.lady).firstChild, "Continue listening:", $("strong", {}, lb.title), $("span", {}, lb.ch[last.i][0]))] : []),
       grid,
       ...(elsewhere.length ? [elsewhereSection()] : []),
@@ -341,6 +356,27 @@ footer.note .row svg { width: 26px; height: 26px }
 
   function mark() {
     document.querySelectorAll("ol.chs button").forEach(el => el.classList.toggle("on", !!cur && location.hash.slice(1) === cur.b.id && +el.dataset.i === cur.i));
+  }
+
+  // Top audiobooks at your library: a saved snapshot (books/libby-top.json); every title opens in Libby.
+  let top = null;
+  async function libbyTop() {
+    document.title = "Top 100 at your library · The Listening Library";
+    if (!top) {
+      app.replaceChildren($("p", { class: "empty" }, "Loading…"));
+      try { top = await (await fetch("books/libby-top.json", { cache: "no-cache" })).json(); }
+      catch { app.replaceChildren($("a", { class: "back", href: "#" }, "← All audiobooks"), $("p", { class: "empty" }, "The list could not load. Check your connection and try again.")); return; }
+    }
+    if (location.hash !== "#libby-top") return;
+    app.replaceChildren(
+      $("a", { class: "back", href: "#" }, "← All audiobooks"),
+      $("div", { class: "top-head" }, $("h1", {}, "Top 100 at your library"),
+        $("p", {}, "The most popular audiobooks in the Tampa Bay Library Consortium on Libby. Tap one to open it in Libby, where you can borrow it or place a hold.")),
+      $("div", { class: "top-grid" }, ...top.items.map((x, n) => $("a", { class: "top-item", href: `https://libbyapp.com/library/${top.library}/everything/page-1/${x.id}`, target: "_blank", rel: "noopener" },
+        $("span", { class: "rank" }, n + 1),
+        $("span", { class: "pic" }, ...(x.c ? [$("img", { src: x.c, alt: "", loading: "lazy", decoding: "async" })] : [])),
+        $("b", {}, x.t), $("small", {}, x.a)))));
+    scrollTo(0, 0);
   }
 
   /* ---------- player ---------- */
@@ -461,6 +497,7 @@ footer.note .row svg { width: 26px; height: 26px }
 
   /* ---------- routing ---------- */
   function route() {
+    if (location.hash === "#libby-top") return libbyTop();
     const b = catalog.find(x => x.id === decodeURIComponent(location.hash.slice(1)));
     b ? bookPage(b) : library();
   }
