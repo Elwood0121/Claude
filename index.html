@@ -278,6 +278,9 @@ footer.note .row svg { width: 26px; height: 26px }
   const app = byId("app"), audio = byId("audio");
   let catalog = [], elsewhere = [], cur = null; // cur = { b, i }
 
+  // Your library's Libby code (the word after /library/ in its Libby link). When set, the Libby button opens
+  // the book in that library's Libby; when empty, it opens an OverDrive search that can find it at nearby libraries.
+  const LIBBY_LIBRARY = "";
   // Books that aren't free: links to official apps and stores only (nothing is hosted here).
   function elsewhereSection() {
     const q = b => encodeURIComponent(`${b.title} ${b.author}`);
@@ -287,7 +290,7 @@ footer.note .row svg { width: 26px; height: 26px }
       $("div", { class: "el-grid" }, ...elsewhere.map(b => $("div", { class: "el-card" },
         $("div", {}, $("b", {}, b.title), $("br"), $("small", {}, b.author + (b.note ? " · " + b.note : ""))),
         $("div", { class: "el-links" }, ...[
-          ["Libby", "https://libbyapp.com/"],
+          ["Libby", LIBBY_LIBRARY ? `https://libbyapp.com/search/${LIBBY_LIBRARY}/search/query-${q(b)}/page-1` : `https://www.overdrive.com/search?q=${q(b)}`],
           ["Hoopla", `https://www.hoopladigital.com/search?q=${q(b)}&type=audiobook`],
           ["Audible", `https://www.audible.com/search?keywords=${q(b)}`],
           ["Spotify", `https://open.spotify.com/search/${q(b)}/audiobooks`],
