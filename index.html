@@ -462,8 +462,8 @@ footer.note .row svg { width: 26px; height: 26px }
     b ? bookPage(b) : library();
   }
   addEventListener("hashchange", route);
-  fetch("books/elsewhere.json").then(r => r.json()).then(e => { elsewhere = e; if (!location.hash && catalog.length) route(); }).catch(() => {});
-  fetch("books/books.json").then(r => r.json()).then(c => {
+  fetch("books/elsewhere.json", { cache: "no-cache" }).then(r => r.json()).then(e => { elsewhere = e; if (!location.hash && catalog.length) route(); }).catch(() => {});
+  fetch("books/books.json", { cache: "no-cache" }).then(r => r.json()).then(c => {
     catalog = c;
     // Show the last book in the player, paused, so one tap resumes it.
     const last = store.get("last", null), b = last && catalog.find(x => x.id === last.id);
