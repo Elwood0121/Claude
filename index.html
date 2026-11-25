@@ -201,6 +201,9 @@ footer.note .row svg { width: 26px; height: 26px }
 .chip { flex: none; min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--line); background: var(--surface); color: var(--accent-ink); font: 600 14px var(--serif); cursor: pointer; white-space: nowrap }
 .chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent) }
 .top-grid .empty { grid-column: 1 / -1; padding: 8px 0 }
+.demand { margin: 0 0 18px; padding: 14px 16px 6px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line) }
+.demand h2 { margin: 0; font: 700 19px var(--serif); color: var(--accent-ink) } .demand p { margin: 2px 0 8px; color: var(--muted); font-size: 13px }
+.demand .chip { display: inline-flex; align-items: center; text-decoration: none }
 .in-libby { display: grid; gap: 2px; margin: 2px 0 12px; padding: 12px 18px; border-radius: 20px; text-decoration: none; background: var(--surface);
   border: 2px dashed var(--accent); color: var(--accent-ink) }
 .in-libby b { font: 600 16px var(--serif) } .in-libby small { color: var(--muted); font-size: 13px }
@@ -376,6 +379,9 @@ footer.note .row svg { width: 26px; height: 26px }
   // Each title opens in the library's Libby to borrow or place a hold. Nothing is played or hosted here.
   let lib = null;
   const lf = { q: "", sub: "", sort: "pop", shown: 60 };
+  // Popular authors whose books are often lent on demand (only visible in Libby when signed in): each opens a Libby search.
+  const ON_DEMAND = ["Ana Huang", "Colleen Hoover", "Sarah J. Maas", "Rebecca Yarros", "Emily Henry", "Freida McFadden", "Tessa Bailey", "Elsie Silver",
+    "Lauren Asher", "Hannah Grace", "Penelope Douglas", "Lucy Score", "Ali Hazelwood", "Kennedy Ryan", "Abby Jimenez", "Carissa Broadbent"];
   const SPECIAL = [["Spicy", ["Erotic Literature"]], ["Romantasy", ["Romance", "Fantasy"]]];  // chip label -> categories it requires
   const FEATURED = ["Romance", "Thriller", "Mystery", "Fantasy", "Science Fiction", "Horror", "Historical Fiction", "Humor (Fiction)",
     "Young Adult Fiction", "Juvenile Fiction", "Biography & Autobiography", "Self-Improvement", "History", "Classic Literature", "Christian Fiction", "Short Stories"];
@@ -410,6 +416,10 @@ footer.note .row svg { width: 26px; height: 26px }
       ...Object.entries(lib.subjects).map(([id, n]) => $("option", { value: id }, n)));
     const sort = $("select", { id: "lsort", "aria-label": "Sort" }, ...[["pop", "Most popular"], ["az", "Title A–Z"], ["short", "Shortest first"]].map(([v, l]) => $("option", { value: v }, l)));
     const count = $("p", { class: "count" });
+    const demand = $("section", { class: "demand" },
+      $("h2", {}, "Popular on demand"),
+      $("p", {}, "Favorite authors your library often lends on demand. Tap a name to see their books in Libby with your card."),
+      $("div", { class: "chips" }, ...ON_DEMAND.map(n => $("a", { class: "chip", href: `https://libbyapp.com/search/${lib.library}/search/query-${encodeURIComponent(n)}/page-1`, target: "_blank", rel: "noopener" }, n))));
     const inLibby = $("a", { class: "in-libby", target: "_blank", rel: "noopener" });
     const grid = $("div", { class: "top-grid" });
     const moreBtn = $("button", { class: "play more-btn" }, "Show more");
@@ -449,7 +459,7 @@ footer.note .row svg { width: 26px; height: 26px }
       $("a", { class: "back", href: "#" }, "← All audiobooks"),
       $("div", { class: "top-head" }, $("h1", {}, "Your library on Libby"),
         $("p", {}, `Every audiobook the Tampa Bay Library Consortium owns. Tap one to open it in Libby, where you can borrow it or place a hold. List updated ${new Date(lib.updated + "T12:00").toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}.`)),
-      $("div", { class: "filters" }, q, $("div", { class: "selects" }, more, sort)), chips, inLibby, count, grid, moreBtn);
+      demand, $("div", { class: "filters" }, q, $("div", { class: "selects" }, more, sort)), chips, inLibby, count, grid, moreBtn);
     draw();
     scrollTo(0, 0);
   }
