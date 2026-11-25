@@ -17,6 +17,7 @@ from pathlib import Path
 CATALOG = Path(os.environ.get("CATALOG") or Path(__file__).resolve().parent.parent / "books" / "books.json")
 CACHE = Path.home() / ".cache" / "openshelf-intros"  # what the recognizer heard, so reruns skip the download
 LISTEN = 75  # seconds of audio to scan
+NUMBERS = {"one", "two", "to", "too", "three", "four", "for", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "fourth", "fifth", "last"}
 ANNOUNCE = {"chapter", "chapters", "stave", "letter", "adventure", "book", "part", "section", "introduction", "preface", "conclusion", "prologue", "epilogue"}
 
 
@@ -71,7 +72,8 @@ def intro_end(ws):
     for k in range(end + 1, len(ws)):
         if ws[k]["start"] > ws[end]["end"] + 45:
             break
-        if text[k] in ANNOUNCE:
+        misheard_stave = text[k] == "stay" and k + 1 < len(text) and text[k + 1] in NUMBERS  # "Stave four" heard as "stay four"
+        if text[k] in ANNOUNCE or misheard_stave:
             if text[k - 1] in ("the", "a") and k - 1 > end and ws[k]["start"] - ws[k - 1]["end"] < 0.3:
                 k -= 1  # keep "The" in "The Adventure of ..."
             prev = ws[k - 1]["end"]
