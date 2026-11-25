@@ -15,7 +15,9 @@ import argparse, json, subprocess, sys, urllib.request
 from pathlib import Path
 
 CATALOG = Path(__file__).resolve().parent.parent / "books" / "books.json"
-LISTEN = 60  # seconds of audio to scan
+CACHE = Path.home() / ".cache" / "openshelf-intros"  # what the recognizer heard, so reruns skip the download
+LISTEN = 75  # seconds of audio to scan
+ANNOUNCE = {"chapter", "chapters", "stave", "letter", "adventure", "book", "part", "section", "introduction", "preface", "conclusion", "prologue", "epilogue"}
 
 
 def pcm(url):
@@ -65,9 +67,16 @@ def intro_end(ws):
             end = v
             while end + 1 < len(ws) and ws[end + 1]["start"] - ws[end]["end"] < 0.35 and end - v < 6:
                 end += 1
+    # Then skip ahead to where the reader announces the chapter ("Chapter one...", "Stave one...") and start just before it.
+    for k in range(end + 1, len(ws)):
+        if ws[k]["start"] > ws[end]["end"] + 25:
+            break
+        if text[k] in ANNOUNCE:
+            prev = ws[k - 1]["end"]
+            return round(max(prev + (ws[k]["start"] - prev) / 2, ws[k]["start"] - 0.4), 2)
     stop = ws[end]["end"]
     nxt = ws[end + 1]["start"] if end + 1 < len(ws) else stop + 0.6
-    # Start in the middle of the pause after the notice, so the cut lands in silence.
+    # No announcement heard: start in the middle of the pause after the notice, so the cut lands in silence.
     return round(min(stop + (nxt - stop) / 2, stop + 0.8), 2)
 
 
@@ -88,6 +97,17 @@ def main():
         servers = [h for h in dict.fromkeys([meta.get("d1"), meta.get("d2"), meta.get("server")]) if h]
         found = 0
         for c in b["ch"]:
+            cached = CACHE / f"{b['ia']}__{c[1]}.json"
+            if cached.exists():
+                ws = json.loads(cached.read_text())
+                t = intro_end(ws)
+                del c[3:]
+                if t:
+                    c.append(t)
+                    found += 1
+                if a.show:
+                    print(f"  {c[0]}: start at {t}s | ... " + " ".join(w["word"] for w in ws if (t or 25) - 3 < w["start"] < (t or 25) + 4) + " ...", flush=True)
+                continue
             audio = None
             for h in servers:  # each item is stored on two servers; use whichever answers
                 try:
@@ -99,6 +119,8 @@ def main():
                 print(f"  {c[0]}: could not download, left unchanged", flush=True)
                 continue
             ws = words(model, audio)
+            CACHE.mkdir(parents=True, exist_ok=True)
+            cached.write_text(json.dumps(ws))
             t = intro_end(ws)
             del c[3:]
             if t:
