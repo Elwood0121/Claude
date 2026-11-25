@@ -193,6 +193,16 @@ footer.note .row svg { width: 26px; height: 26px }
 .to-top { display: flex; align-items: center; gap: 12px; margin: 0 0 24px; padding: 14px 18px; border-radius: 22px; text-decoration: none;
   background: var(--accent); color: var(--on-accent); font: 600 17px var(--serif); box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 70%, #000) }
 .to-top svg { width: 30px; height: 30px; flex: none } .to-top small { display: block; font: 600 13px var(--sans); opacity: .9 }
+.filters { display: grid; gap: 10px; margin-bottom: 12px }
+.filters input, .filters select { width: 100%; min-height: 44px; padding: 10px 16px; font-size: 16px; border: 2px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink) }
+.selects { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; margin: 0 -2px; scrollbar-width: none; -webkit-overflow-scrolling: touch }
+.chips::-webkit-scrollbar { display: none }
+.chip { flex: none; min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--line); background: var(--surface); color: var(--accent-ink); font: 600 14px var(--serif); cursor: pointer; white-space: nowrap }
+.chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent) }
+.count { margin: 4px 0 14px; color: var(--muted); font-size: 14px; font-weight: 600 }
+.more-btn { display: flex; margin: 28px auto 0 }
+@media (min-width: 640px) { .filters { grid-template-columns: 1fr auto } .selects { grid-template-columns: auto auto } }
 .top-head h1 { font: 700 30px/1.1 var(--serif); color: var(--accent-ink); margin: 0 0 6px } .top-head p { margin: 0 0 20px; color: var(--muted) }
 .top-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 20px 12px }
 .top-item { position: relative; display: grid; gap: 8px; align-content: start; text-decoration: none; color: var(--ink) }
@@ -328,7 +338,7 @@ footer.note .row svg { width: 26px; height: 26px }
     app.replaceChildren(
       $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, art$(ART.flower()).firstChild, "The Listening Library", $("small", {}, `${catalog.length} free classic audiobooks`)), q),
       garden(),
-      $("a", { class: "to-top", href: "#libby-top" }, art$(ART.flower("#fff")).firstChild, $("span", {}, "Top 100 audiobooks at your library", $("small", {}, "Opens in the Libby app"))),
+      $("a", { class: "to-top", href: "#libby" }, art$(ART.flower("#fff")).firstChild, $("span", {}, "Browse your library\u2019s audiobooks", $("small", {}, "Search 6,000+ titles by category · opens in Libby"))),
       ...(lb ? [$("a", { class: "continue", href: "#" + lb.id }, art$(ART.lady).firstChild, "Continue listening:", $("strong", {}, lb.title), $("span", {}, lb.ch[last.i][0]))] : []),
       grid,
       ...(elsewhere.length ? [elsewhereSection()] : []),
@@ -358,24 +368,56 @@ footer.note .row svg { width: 26px; height: 26px }
     document.querySelectorAll("ol.chs button").forEach(el => el.classList.toggle("on", !!cur && location.hash.slice(1) === cur.b.id && +el.dataset.i === cur.i));
   }
 
-  // Top audiobooks at your library: a saved snapshot (books/libby-top.json); every title opens in Libby.
-  let top = null;
-  async function libbyTop() {
-    document.title = "Top 100 at your library · The Listening Library";
-    if (!top) {
-      app.replaceChildren($("p", { class: "empty" }, "Loading…"));
-      try { top = await (await fetch("books/libby-top.json", { cache: "no-cache" })).json(); }
-      catch { app.replaceChildren($("a", { class: "back", href: "#" }, "← All audiobooks"), $("p", { class: "empty" }, "The list could not load. Check your connection and try again.")); return; }
+  // Your library on Libby: every audiobook (saved snapshot in books/libby.json), searchable by title, author and category.
+  // Each title opens in the library's Libby to borrow or place a hold. Nothing is played or hosted here.
+  let lib = null;
+  const lf = { q: "", sub: "", sort: "pop", shown: 60 };
+  const FEATURED = ["Romance", "Thriller", "Mystery", "Fantasy", "Science Fiction", "Horror", "Historical Fiction", "Humor (Fiction)",
+    "Young Adult Fiction", "Juvenile Fiction", "Biography & Autobiography", "Self-Improvement", "History", "Classic Literature", "Christian Fiction", "Short Stories"];
+  async function libbyBrowse() {
+    document.title = "Your library on Libby · The Listening Library";
+    if (!lib) {
+      app.replaceChildren($("p", { class: "empty" }, "Loading your library…"));
+      try {
+        lib = await (await fetch("books/libby.json", { cache: "no-cache" })).json();
+        lib.items.forEach(x => { x.s = (x[1] + " " + x[2]).toLowerCase(); });
+      } catch { app.replaceChildren($("a", { class: "back", href: "#" }, "← All audiobooks"), $("p", { class: "empty" }, "Your library list could not load. Check your connection and try again.")); return; }
     }
-    if (location.hash !== "#libby-top") return;
+    if (location.hash !== "#libby") return;
+    const byName = Object.fromEntries(Object.entries(lib.subjects).map(([id, n]) => [n, id]));
+    const q = $("input", { id: "lq", type: "search", placeholder: "Search title or author", "aria-label": "Search your library's audiobooks", value: lf.q });
+    const chips = $("div", { class: "chips" });
+    const more = $("select", { id: "lsub", "aria-label": "All categories" }, $("option", { value: "" }, "All categories"),
+      ...Object.entries(lib.subjects).map(([id, n]) => $("option", { value: id }, n)));
+    const sort = $("select", { id: "lsort", "aria-label": "Sort" }, ...[["pop", "Most popular"], ["az", "Title A–Z"], ["short", "Shortest first"]].map(([v, l]) => $("option", { value: v }, l)));
+    const count = $("p", { class: "count" });
+    const grid = $("div", { class: "top-grid" });
+    const moreBtn = $("button", { class: "play more-btn" }, "Show more");
+    const draw = () => {
+      more.value = lf.sub; sort.value = lf.sort;
+      chips.replaceChildren(...[["", "All"], ...FEATURED.filter(n => byName[n]).map(n => [byName[n], n])].map(([id, n]) =>
+        $("button", { class: "chip" + (lf.sub === id ? " on" : ""), onclick: () => { lf.sub = id; lf.shown = 60; draw(); } }, n)));
+      const words = lf.q.toLowerCase().split(/\s+/).filter(Boolean);
+      let list = lib.items.filter(x => (!lf.sub || x[4].includes(+lf.sub)) && words.every(w => x.s.includes(w)));
+      if (lf.sort === "az") list = [...list].sort((a, b) => a[1].replace(/^(The|A|An) /, "").localeCompare(b[1].replace(/^(The|A|An) /, "")));
+      if (lf.sort === "short") list = [...list].sort((a, b) => (a[5] || 1e9) - (b[5] || 1e9));
+      count.textContent = `${list.length.toLocaleString()} audiobook${list.length === 1 ? "" : "s"}` + (lf.sub ? ` in ${lib.subjects[lf.sub]}` : "");
+      grid.replaceChildren(...list.slice(0, lf.shown).map(x => $("a", { class: "top-item", href: `https://libbyapp.com/library/${lib.library}/everything/page-1/${x[0]}`, target: "_blank", rel: "noopener" },
+        $("span", { class: "pic" }, ...(x[3] ? [$("img", { src: "https://img1.od-cdn.com/ImageType-150/" + x[3], alt: "", loading: "lazy", decoding: "async", onerror: e => e.target.remove() })] : [])),
+        $("b", {}, x[1]), $("small", {}, x[2] + (x[5] ? ` · ${hm(x[5] * 60)}` : "")))));
+      if (!list.length) grid.append($("p", { class: "empty" }, "No audiobooks match. Try another word or category."));
+      moreBtn.hidden = list.length <= lf.shown;
+    };
+    q.oninput = () => { lf.q = q.value; lf.shown = 60; draw(); };
+    more.onchange = () => { lf.sub = more.value; lf.shown = 60; draw(); };
+    sort.onchange = () => { lf.sort = sort.value; lf.shown = 60; draw(); };
+    moreBtn.onclick = () => { lf.shown += 60; draw(); };
     app.replaceChildren(
       $("a", { class: "back", href: "#" }, "← All audiobooks"),
-      $("div", { class: "top-head" }, $("h1", {}, "Top 100 at your library"),
-        $("p", {}, "The most popular audiobooks in the Tampa Bay Library Consortium on Libby. Tap one to open it in Libby, where you can borrow it or place a hold.")),
-      $("div", { class: "top-grid" }, ...top.items.map((x, n) => $("a", { class: "top-item", href: `https://libbyapp.com/library/${top.library}/everything/page-1/${x.id}`, target: "_blank", rel: "noopener" },
-        $("span", { class: "rank" }, n + 1),
-        $("span", { class: "pic" }, ...(x.c ? [$("img", { src: x.c, alt: "", loading: "lazy", decoding: "async" })] : [])),
-        $("b", {}, x.t), $("small", {}, x.a)))));
+      $("div", { class: "top-head" }, $("h1", {}, "Your library on Libby"),
+        $("p", {}, `Every audiobook in the Tampa Bay Library Consortium. Tap one to open it in Libby, where you can borrow it or place a hold. List updated ${new Date(lib.updated + "T12:00").toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}.`)),
+      $("div", { class: "filters" }, q, $("div", { class: "selects" }, more, sort)), chips, count, grid, moreBtn);
+    draw();
     scrollTo(0, 0);
   }
 
@@ -497,7 +539,8 @@ footer.note .row svg { width: 26px; height: 26px }
 
   /* ---------- routing ---------- */
   function route() {
-    if (location.hash === "#libby-top") return libbyTop();
+    if (location.hash === "#libby-top") return void (location.hash = "libby");
+    if (location.hash === "#libby") return libbyBrowse();
     const b = catalog.find(x => x.id === decodeURIComponent(location.hash.slice(1)));
     b ? bookPage(b) : library();
   }
