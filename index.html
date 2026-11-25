@@ -166,6 +166,17 @@ ol.chs .on .n { color: transparent; background: url("data:image/svg+xml,%3Csvg x
 footer.note { border-top: 2px dashed var(--line); text-align: center }
 footer.note .row { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px }
 footer.note .row svg { width: 26px; height: 26px }
+
+/* Listen elsewhere: links out to official apps for books that aren't free */
+.elsewhere { margin-top: 44px }
+.elsewhere h2 { font: 700 22px var(--serif); color: var(--accent-ink); margin: 0 0 4px }
+.elsewhere > p { margin: 0 0 16px; color: var(--muted); font-size: 14px }
+.el-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px }
+.el-card { background: var(--surface); border: 2px dashed var(--petal); border-radius: 22px; padding: 16px; display: grid; gap: 10px }
+.el-card b { font: 600 18px/1.2 var(--serif) } .el-card small { color: var(--muted); font-size: 13px }
+.el-links { display: flex; flex-wrap: wrap; gap: 8px }
+.el-links a { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 14px; border-radius: 999px; background: var(--bg); border: 2px solid var(--line);
+  font: 600 14px var(--serif); text-decoration: none; color: var(--accent-ink) }
 @media (max-width: 560px) { .hero h1 { font-size: 24px } .hero .bfly { width: 36px; height: 32px; top: -26px } }
 @media (prefers-reduced-motion: reduce) {
   .brand svg, .garden .cat, .garden .cat svg, .garden .bee, .hero .bfly { animation: none }
@@ -252,7 +263,23 @@ footer.note .row svg { width: 26px; height: 26px }
     return g;
   };
   const app = byId("app"), audio = byId("audio");
-  let catalog = [], cur = null; // cur = { b, i }
+  let catalog = [], elsewhere = [], cur = null; // cur = { b, i }
+
+  // Books that aren't free: links to official apps and stores only (nothing is hosted here).
+  function elsewhereSection() {
+    const q = b => encodeURIComponent(`${b.title} ${b.author}`);
+    return $("section", { class: "elsewhere" },
+      $("h2", {}, "Listen elsewhere"),
+      $("p", {}, "These aren't free, so they open in an official app or store. Libby and Hoopla are free with a library card."),
+      $("div", { class: "el-grid" }, ...elsewhere.map(b => $("div", { class: "el-card" },
+        $("div", {}, $("b", {}, b.title), $("br"), $("small", {}, b.author + (b.note ? " · " + b.note : ""))),
+        $("div", { class: "el-links" }, ...[
+          ["Libby", "https://libbyapp.com/"],
+          ["Hoopla", `https://www.hoopladigital.com/search?q=${q(b)}&type=audiobook`],
+          ["Audible", `https://www.audible.com/search?keywords=${q(b)}`],
+          ["Spotify", `https://open.spotify.com/search/${q(b)}/audiobooks`],
+        ].map(([name, href]) => $("a", { href, target: "_blank", rel: "noopener" }, name)))))));
+  }
 
   /* ---------- views ---------- */
   function library() {
@@ -273,6 +300,7 @@ footer.note .row svg { width: 26px; height: 26px }
       garden(),
       ...(lb ? [$("a", { class: "continue", href: "#" + lb.id }, art$(ART.lady).firstChild, "Continue listening:", $("strong", {}, lb.title), $("span", {}, lb.ch[last.i][0]))] : []),
       grid,
+      ...(elsewhere.length ? [elsewhereSection()] : []),
       $("footer", { class: "note" }, $("div", { class: "row" }, ...["#ffb3d1", "#ffd65a", "#c9a7ff", "#ff8fb8"].map(c => art$(ART.flower(c)).firstChild)), "Recordings by volunteer narrators at LibriVox (librivox.org), streamed from the Internet Archive (archive.org). All recordings and books are in the public domain."));
   }
 
@@ -420,6 +448,7 @@ footer.note .row svg { width: 26px; height: 26px }
     b ? bookPage(b) : library();
   }
   addEventListener("hashchange", route);
+  fetch("books/elsewhere.json").then(r => r.json()).then(e => { elsewhere = e; if (!location.hash && catalog.length) route(); }).catch(() => {});
   fetch("books/books.json").then(r => r.json()).then(c => {
     catalog = c;
     // Show the last book in the player, paused, so one tap resumes it.
