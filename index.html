@@ -390,7 +390,7 @@ footer.note .row svg { width: 26px; height: 26px }
   let lib = null;
   const lf = { q: "", sub: "", sort: "pop", shown: 60, noWait: store.get("nowait", false) };
   // Live "no wait" check: asks the library which titles can be borrowed right now, 100 at a time, only as far down the list as needed.
-  const avail = new Map(); let availAt = 0, checking = false, availFailed = false;
+  const avail = new Map(), asking = new Set(); let availAt = 0, availFailed = false;
   // Popular authors whose books are often lent on demand (only visible in Libby when signed in): each opens a Libby search.
   const ON_DEMAND = ["Ana Huang", "Colleen Hoover", "Sarah J. Maas", "Rebecca Yarros", "Emily Henry", "Freida McFadden", "Tessa Bailey", "Elsie Silver",
     "Lauren Asher", "Hannah Grace", "Penelope Douglas", "Lucy Score", "Ali Hazelwood", "Kennedy Ryan", "Abby Jimenez", "Carissa Broadbent"];
@@ -432,14 +432,16 @@ footer.note .row svg { width: 26px; height: 26px }
     nw.checked = lf.noWait;
     nw.onchange = () => { lf.noWait = nw.checked; store.set("nowait", lf.noWait); availFailed = false; lf.shown = 60; draw(); };
     const noWait = $("label", { class: "switch", for: "lnowait" }, nw, $("span", { class: "knob", "aria-hidden": "true" }), $("span", {}, "No wait only"), $("small", {}, "Borrow right now, no holds"));
+    // Up to 3 lookups at once, so a full screen fills quickly.
     const checkBatch = ids => {
-      if (checking || !ids.length) return;
-      checking = true;
+      ids = ids.filter(id => !asking.has(id));
+      if (!ids.length) return;
+      ids.forEach(id => asking.add(id));
       fetch(`https://thunder.api.overdrive.com/v2/libraries/${lib.library}/media/bulk?titleIds=${ids.join(",")}`)
         .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
         .then(d => { (Array.isArray(d) ? d : d.items || []).forEach(it => avail.set(+it.id, !!it.isAvailable)); ids.forEach(id => { if (!avail.has(id)) avail.set(id, false); }); })
         .catch(() => { availFailed = true; })
-        .finally(() => { checking = false; if (location.hash === "#libby") draw(); });
+        .finally(() => { ids.forEach(id => asking.delete(id)); if (location.hash === "#libby") draw(); });
     };
     const demand = $("section", { class: "demand" },
       $("h2", {}, "Popular on demand"),
@@ -468,7 +470,7 @@ footer.note .row svg { width: 26px; height: 26px }
       if (lf.sort === "short") list = [...list].sort((a, b) => (a[5] || 1e9) - (b[5] || 1e9));
       let pending = false;
       if (lf.noWait && !availFailed) {
-        if (Date.now() - availAt > 10 * 60e3) { avail.clear(); availAt = Date.now(); }  // availability changes, so re-check after 10 minutes
+        if (Date.now() - availAt > 10 * 60e3 && !asking.size) { avail.clear(); availAt = Date.now(); }  // availability changes, so re-check after 10 minutes
         const vis = []; let firstUnknown = -1;
         for (let i = 0; i < list.length && vis.length < lf.shown; i++) {
           const a = avail.get(list[i][0]);
@@ -477,7 +479,9 @@ footer.note .row svg { width: 26px; height: 26px }
         }
         if (firstUnknown >= 0) {
           pending = true;
-          checkBatch(list.slice(firstUnknown).filter(x => !avail.has(x[0])).slice(0, 100).map(x => x[0]));
+          const unknown = list.slice(firstUnknown).filter(x => !avail.has(x[0]) && !asking.has(x[0])).map(x => x[0]);
+          const inFlight = Math.ceil(asking.size / 100);
+          for (let k = 0; k < 3 - inFlight; k++) checkBatch(unknown.slice(k * 100, k * 100 + 100));
         }
         const allKnown = !pending && list.every(x => avail.has(x[0]));
         const total = allKnown ? list.filter(x => avail.get(x[0])).length : null;
