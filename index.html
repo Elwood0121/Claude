@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Open Shelf</title>
+<title>The Listening Library</title>
 <meta name="description" content="Free classic audiobooks, read by LibriVox volunteers.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Open Shelf">
+<meta name="apple-mobile-web-app-title" content="The Listening Library">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14171b" media="(prefers-color-scheme: dark)">
@@ -175,7 +175,7 @@ svg { width: 24px; height: 24px; fill: currentColor; display: block }
 
   /* ---------- views ---------- */
   function library() {
-    document.title = "Open Shelf";
+    document.title = "The Listening Library";
     const q = $("input", { id: "q", type: "search", placeholder: "Search title or author", "aria-label": "Search audiobooks" });
     const grid = $("div", { class: "grid" });
     const draw = () => {
@@ -188,14 +188,14 @@ svg { width: 24px; height: 24px; fill: currentColor; display: block }
     q.oninput = draw; draw();
     const last = store.get("last", null), lb = last && catalog.find(b => b.id === last.id);
     app.replaceChildren(
-      $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, "Open Shelf", $("small", {}, `${catalog.length} free classic audiobooks`)), q),
+      $("header", { class: "top" }, $("a", { class: "brand", href: "#" }, "The Listening Library", $("small", {}, `${catalog.length} free classic audiobooks`)), q),
       ...(lb ? [$("a", { class: "continue", href: "#" + lb.id }, "Continue listening:", $("strong", {}, lb.title), $("span", {}, lb.ch[last.i][0]))] : []),
       grid,
       $("footer", { class: "note" }, "Recordings by volunteer narrators at LibriVox (librivox.org), streamed from the Internet Archive (archive.org). All recordings and books are in the public domain."));
   }
 
   function bookPage(b) {
-    document.title = `${b.title} · Open Shelf`;
+    document.title = `${b.title} · The Listening Library`;
     const saved = store.get("pos", {})[b.id];
     const startAt = saved ? saved.i : 0;
     const list = $("ol", { class: "chs" }, ...b.ch.map((c, i) => $("li", {}, $("button", { "data-i": i, onclick: () => play(b, i, 0) },

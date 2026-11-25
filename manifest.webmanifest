@@ -1,6 +1,6 @@
 {
-  "name": "Open Shelf",
-  "short_name": "Open Shelf",
+  "name": "The Listening Library",
+  "short_name": "Listening",
   "description": "Free classic audiobooks, read by LibriVox volunteers.",
   "start_url": "./",
   "scope": "./",

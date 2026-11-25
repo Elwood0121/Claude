@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Add a free LibriVox audiobook to Open Shelf.
+"""Add a free LibriVox audiobook to The Listening Library.
 
 Usage:
   python3 tools/add_audiobook.py <archive.org identifier> <slug> "<Title>" "<Author>" <year>
