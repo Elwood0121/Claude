@@ -372,6 +372,7 @@ footer.note .row svg { width: 26px; height: 26px }
   // Each title opens in the library's Libby to borrow or place a hold. Nothing is played or hosted here.
   let lib = null;
   const lf = { q: "", sub: "", sort: "pop", shown: 60 };
+  const SPECIAL = [["Spicy", ["Erotic Literature"]], ["Romantasy", ["Romance", "Fantasy"]]];  // chip label -> categories it requires
   const FEATURED = ["Romance", "Thriller", "Mystery", "Fantasy", "Science Fiction", "Horror", "Historical Fiction", "Humor (Fiction)",
     "Young Adult Fiction", "Juvenile Fiction", "Biography & Autobiography", "Self-Improvement", "History", "Classic Literature", "Christian Fiction", "Short Stories"];
   async function libbyBrowse() {
@@ -394,14 +395,17 @@ footer.note .row svg { width: 26px; height: 26px }
     const grid = $("div", { class: "top-grid" });
     const moreBtn = $("button", { class: "play more-btn" }, "Show more");
     const draw = () => {
-      more.value = lf.sub; sort.value = lf.sort;
-      chips.replaceChildren(...[["", "All"], ...FEATURED.filter(n => byName[n]).map(n => [byName[n], n])].map(([id, n]) =>
+      more.value = lib.subjects[lf.sub] ? lf.sub : ""; sort.value = lf.sort;
+      const special = SPECIAL.filter(([, ns]) => ns.every(n => byName[n])).map(([label, ns]) => [ns.map(n => byName[n]).join("+"), label]);
+      const featured = FEATURED.filter(n => byName[n]).map(n => [byName[n], n]);
+      chips.replaceChildren(...[["", "All"], featured[0], ...special, ...featured.slice(1)].map(([id, n]) =>
         $("button", { class: "chip" + (lf.sub === id ? " on" : ""), onclick: () => { lf.sub = id; lf.shown = 60; draw(); } }, n)));
       const words = lf.q.toLowerCase().split(/\s+/).filter(Boolean);
-      let list = lib.items.filter(x => (!lf.sub || x[4].includes(+lf.sub)) && words.every(w => x.s.includes(w)));
+      const need = lf.sub ? lf.sub.split("+").map(Number) : [];
+      let list = lib.items.filter(x => need.every(id => x[4].includes(id)) && words.every(w => x.s.includes(w)));
       if (lf.sort === "az") list = [...list].sort((a, b) => a[1].replace(/^(The|A|An) /, "").localeCompare(b[1].replace(/^(The|A|An) /, "")));
       if (lf.sort === "short") list = [...list].sort((a, b) => (a[5] || 1e9) - (b[5] || 1e9));
-      count.textContent = `${list.length.toLocaleString()} audiobook${list.length === 1 ? "" : "s"}` + (lf.sub ? ` in ${lib.subjects[lf.sub]}` : "");
+      count.textContent = `${list.length.toLocaleString()} audiobook${list.length === 1 ? "" : "s"}` + (lf.sub ? ` in ${(SPECIAL.find(([, ns]) => ns.map(n => byName[n]).join("+") === lf.sub) || [lf.sub.split("+").map(id => lib.subjects[id]).join(" + ")])[0]}` : "");
       grid.replaceChildren(...list.slice(0, lf.shown).map(x => $("a", { class: "top-item", href: `https://libbyapp.com/library/${lib.library}/everything/page-1/${x[0]}`, target: "_blank", rel: "noopener" },
         $("span", { class: "pic" }, ...(x[3] ? [$("img", { src: "https://img1.od-cdn.com/ImageType-150/" + x[3], alt: "", loading: "lazy", decoding: "async", onerror: e => e.target.remove() })] : [])),
         $("b", {}, x[1]), $("small", {}, x[2] + (x[5] ? ` · ${hm(x[5] * 60)}` : "")))));
