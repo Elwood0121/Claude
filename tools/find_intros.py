@@ -85,10 +85,20 @@ def main():
         if a.ids and b["id"] not in a.ids:
             continue
         meta = json.load(urllib.request.urlopen(f"https://archive.org/metadata/{b['ia']}", timeout=60))
-        base = f"https://{meta['server']}{meta['dir']}/"
+        servers = [h for h in dict.fromkeys([meta.get("d1"), meta.get("d2"), meta.get("server")]) if h]
         found = 0
         for c in b["ch"]:
-            ws = words(model, pcm(base + c[1]))
+            audio = None
+            for h in servers:  # each item is stored on two servers; use whichever answers
+                try:
+                    audio = pcm(f"https://{h}{meta['dir']}/{c[1]}")
+                    break
+                except subprocess.CalledProcessError:
+                    continue
+            if audio is None:
+                print(f"  {c[0]}: could not download, left unchanged", flush=True)
+                continue
+            ws = words(model, audio)
             t = intro_end(ws)
             del c[3:]
             if t:

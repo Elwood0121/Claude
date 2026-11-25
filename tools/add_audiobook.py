@@ -60,6 +60,9 @@ def main():
         name = re.sub(r"^\d+\s*[-.–:]\s*(?=\S)", "", name).strip()
         chapters.append([name, f["name"], seconds(f.get("length"))])
 
+    covers = [f for f in meta["files"] if f.get("format") == "JPEG" and f.get("source") == "original" and not f["name"].startswith("__")]
+    covers.sort(key=lambda f: -int(f.get("size", 0)))
+
     desc = html.unescape(re.sub(r"<[^>]+>", " ", str(meta["metadata"].get("description", ""))))
     m = re.search(r"[Rr]ead by:?\s+([A-Z][^.\n<(]{2,60})", desc)
     reader = m.group(1).strip() if m else "LibriVox volunteers"
@@ -68,7 +71,8 @@ def main():
     cat = [b for b in cat if b["id"] != slug]
     cat.append({
         "id": slug, "title": title, "author": author, "year": int(year), "reader": reader, "ia": ia,
-        "hue": int(hashlib.md5(slug.encode()).hexdigest(), 16) % 360, "ch": chapters,
+        "hue": int(hashlib.md5(slug.encode()).hexdigest(), 16) % 360,
+        **({"cover": covers[0]["name"]} if covers else {}), "ch": chapters,
     })
     cat.sort(key=lambda b: re.sub(r"^(The|A|An) ", "", b["title"]))
     CATALOG.parent.mkdir(exist_ok=True)

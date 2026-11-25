@@ -164,8 +164,12 @@ svg { width: 24px; height: 24px; fill: currentColor; display: block }
   const len = c => c[2] - (c[3] || 0);
   const total = b => b.ch.reduce((t, c) => t + len(c), 0);
   // Cover art streams from archive.org; the colored title box underneath shows if the picture can't load.
+  // Full-size cover from archive.org; falls back to archive.org's small thumbnail, then to the colored title box.
+  const thumbUrl = b => `https://archive.org/services/img/${b.ia}`;
+  const coverUrl = b => b.cover ? `https://archive.org/download/${b.ia}/${encodeURIComponent(b.cover)}` : thumbUrl(b);
   const cover = b => $("div", { class: "cover", style: "--h:" + b.hue }, $("b", {}, b.title), $("i", {}, b.author),
-    $("img", { src: `https://archive.org/services/img/${b.ia}`, alt: "", loading: "lazy", decoding: "async", onerror: e => e.target.remove() }));
+    $("img", { src: coverUrl(b), alt: "", loading: "lazy", decoding: "async",
+      onerror: e => { const img = e.target; img.src !== thumbUrl(b) ? img.src = thumbUrl(b) : img.remove(); } }));
   const app = byId("app"), audio = byId("audio");
   let catalog = [], cur = null; // cur = { b, i }
 
@@ -215,7 +219,7 @@ svg { width: 24px; height: 24px; fill: currentColor; display: block }
 
   /* ---------- player ---------- */
   const ICON = { play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>', pause: '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>' };
-  const art = b => `https://archive.org/services/img/${b.ia}`;
+  const art = coverUrl;
   const speed = () => store.get("speed", 1);
   const o = () => cur ? off(cur.b, cur.i) : 0;
   let pending = null, dragging = false, lastSave = 0;
@@ -232,7 +236,7 @@ svg { width: 24px; height: 24px; fill: currentColor; display: block }
     byId("seek").max = len(b.ch[i]);
     progress(t - off(b, i));
     if ("mediaSession" in navigator) navigator.mediaSession.metadata = new MediaMetadata({
-      title: b.ch[i][0], artist: b.author, album: b.title, artwork: [{ src: art(b), sizes: "300x300", type: "image/jpeg" }] });
+      title: b.ch[i][0], artist: b.author, album: b.title, artwork: [{ src: art(b), sizes: "512x512", type: "image/jpeg" }] });
   }
   function progress(pos) {
     const dur = cur ? len(cur.b.ch[cur.i]) : 0;
