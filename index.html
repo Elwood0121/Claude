@@ -204,6 +204,16 @@ footer.note .row svg { width: 26px; height: 26px }
 .demand { margin: 0 0 18px; padding: 14px 16px 6px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line) }
 .demand h2 { margin: 0; font: 700 19px var(--serif); color: var(--accent-ink) } .demand p { margin: 2px 0 8px; color: var(--muted); font-size: 13px }
 .demand .chip { display: inline-flex; align-items: center; text-decoration: none }
+.switch { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; margin: 0 0 12px; padding: 10px 16px; border-radius: 20px;
+  background: var(--surface); border: 2px solid var(--line); cursor: pointer; -webkit-user-select: none; user-select: none; position: relative }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px }
+.switch .knob { grid-row: span 2; width: 52px; height: 32px; border-radius: 999px; background: var(--line); position: relative; transition: background .2s }
+.switch .knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: transform .2s }
+.switch input:checked + .knob { background: var(--leaf) }
+.switch input:checked + .knob::after { transform: translateX(20px) }
+.switch input:focus-visible + .knob { outline: 2px solid var(--accent); outline-offset: 2px }
+.switch > span:not(.knob) { font: 600 16px var(--serif) } .switch small { color: var(--muted); font-size: 13px }
+@media (prefers-reduced-motion: reduce) { .switch .knob, .switch .knob::after { transition: none } }
 .in-libby { display: grid; gap: 2px; margin: 2px 0 12px; padding: 12px 18px; border-radius: 20px; text-decoration: none; background: var(--surface);
   border: 2px dashed var(--accent); color: var(--accent-ink) }
 .in-libby b { font: 600 16px var(--serif) } .in-libby small { color: var(--muted); font-size: 13px }
@@ -378,7 +388,9 @@ footer.note .row svg { width: 26px; height: 26px }
   // Your library on Libby: every audiobook (saved snapshot in books/libby.json), searchable by title, author and category.
   // Each title opens in the library's Libby to borrow or place a hold. Nothing is played or hosted here.
   let lib = null;
-  const lf = { q: "", sub: "", sort: "pop", shown: 60 };
+  const lf = { q: "", sub: "", sort: "pop", shown: 60, noWait: store.get("nowait", false) };
+  // Live "no wait" check: asks the library which titles can be borrowed right now, 100 at a time, only as far down the list as needed.
+  const avail = new Map(); let availAt = 0, checking = false, availFailed = false;
   // Popular authors whose books are often lent on demand (only visible in Libby when signed in): each opens a Libby search.
   const ON_DEMAND = ["Ana Huang", "Colleen Hoover", "Sarah J. Maas", "Rebecca Yarros", "Emily Henry", "Freida McFadden", "Tessa Bailey", "Elsie Silver",
     "Lauren Asher", "Hannah Grace", "Penelope Douglas", "Lucy Score", "Ali Hazelwood", "Kennedy Ryan", "Abby Jimenez", "Carissa Broadbent"];
@@ -416,6 +428,19 @@ footer.note .row svg { width: 26px; height: 26px }
       ...Object.entries(lib.subjects).map(([id, n]) => $("option", { value: id }, n)));
     const sort = $("select", { id: "lsort", "aria-label": "Sort" }, ...[["pop", "Most popular"], ["az", "Title A–Z"], ["short", "Shortest first"]].map(([v, l]) => $("option", { value: v }, l)));
     const count = $("p", { class: "count" });
+    const nw = $("input", { type: "checkbox", id: "lnowait", role: "switch" });
+    nw.checked = lf.noWait;
+    nw.onchange = () => { lf.noWait = nw.checked; store.set("nowait", lf.noWait); availFailed = false; lf.shown = 60; draw(); };
+    const noWait = $("label", { class: "switch", for: "lnowait" }, nw, $("span", { class: "knob", "aria-hidden": "true" }), $("span", {}, "No wait only"), $("small", {}, "Borrow right now, no holds"));
+    const checkBatch = ids => {
+      if (checking || !ids.length) return;
+      checking = true;
+      fetch(`https://thunder.api.overdrive.com/v2/libraries/${lib.library}/media/bulk?titleIds=${ids.join(",")}`)
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(d => { (Array.isArray(d) ? d : d.items || []).forEach(it => avail.set(+it.id, !!it.isAvailable)); ids.forEach(id => { if (!avail.has(id)) avail.set(id, false); }); })
+        .catch(() => { availFailed = true; })
+        .finally(() => { checking = false; if (location.hash === "#libby") draw(); });
+    };
     const demand = $("section", { class: "demand" },
       $("h2", {}, "Popular on demand"),
       $("p", {}, "Favorite authors your library often lends on demand. Tap a name to see their books in Libby with your card."),
@@ -441,12 +466,33 @@ footer.note .row svg { width: 26px; height: 26px }
       }
       if (lf.sort === "az") list = [...list].sort((a, b) => a[1].replace(/^(The|A|An) /, "").localeCompare(b[1].replace(/^(The|A|An) /, "")));
       if (lf.sort === "short") list = [...list].sort((a, b) => (a[5] || 1e9) - (b[5] || 1e9));
-      count.textContent = (fuzzy ? "No exact match. Close spellings: " : "") + `${list.length.toLocaleString()} audiobook${list.length === 1 ? "" : "s"}` + (lf.sub ? ` in ${(SPECIAL.find(([, ns]) => ns.map(n => byName[n]).join("+") === lf.sub) || [lf.sub.split("+").map(id => lib.subjects[id]).join(" + ")])[0]}` : "");
+      let pending = false;
+      if (lf.noWait && !availFailed) {
+        if (Date.now() - availAt > 10 * 60e3) { avail.clear(); availAt = Date.now(); }  // availability changes, so re-check after 10 minutes
+        const vis = []; let firstUnknown = -1;
+        for (let i = 0; i < list.length && vis.length < lf.shown; i++) {
+          const a = avail.get(list[i][0]);
+          if (a === undefined) { firstUnknown = i; break; }
+          if (a) vis.push(list[i]);
+        }
+        if (firstUnknown >= 0) {
+          pending = true;
+          checkBatch(list.slice(firstUnknown).filter(x => !avail.has(x[0])).slice(0, 100).map(x => x[0]));
+        }
+        const allKnown = !pending && list.every(x => avail.has(x[0]));
+        const total = allKnown ? list.filter(x => avail.get(x[0])).length : null;
+        list = total == null ? vis : list.filter(x => avail.get(x[0]));
+        list.noWaitTotal = total;
+      }
+      const n = list.noWaitTotal ?? list.length;
+      count.textContent = (availFailed && lf.noWait ? "Couldn\u2019t check availability right now, so showing all. " : "") + (fuzzy ? "No exact match. Close spellings: " : "") +
+        (lf.noWait && !availFailed ? (pending ? `Checking which are available\u2026 ${n} so far` : `${n.toLocaleString()}${list.noWaitTotal == null ? "+" : ""} with no wait`) : `${n.toLocaleString()} audiobook${n === 1 ? "" : "s"}`) + (lf.sub ? ` in ${(SPECIAL.find(([, ns]) => ns.map(n => byName[n]).join("+") === lf.sub) || [lf.sub.split("+").map(id => lib.subjects[id]).join(" + ")])[0]}` : "");
       grid.replaceChildren(...list.slice(0, lf.shown).map(x => $("a", { class: "top-item", href: `https://libbyapp.com/library/${lib.library}/everything/page-1/${x[0]}`, target: "_blank", rel: "noopener" },
         $("span", { class: "pic" }, ...(x[3] ? [$("img", { src: "https://img1.od-cdn.com/ImageType-150/" + x[3], alt: "", loading: "lazy", decoding: "async", onerror: e => e.target.remove() })] : [])),
         $("b", {}, x[1]), $("small", {}, x[2] + (x[5] ? ` · ${hm(x[5] * 60)}` : "")))));
-      if (!list.length) grid.append($("p", { class: "empty" }, "Not in this list. Your library may still lend it on demand: tap \u201cSearch in Libby\u201d above to check with your card."));
-      moreBtn.hidden = list.length <= lf.shown;
+      if (!list.length && pending) grid.append($("p", { class: "empty" }, "Checking your library\u2026"));
+      else if (!list.length) grid.append($("p", { class: "empty" }, "Not in this list. Your library may still lend it on demand: tap \u201cSearch in Libby\u201d above to check with your card."));
+      moreBtn.hidden = lf.noWait && !availFailed ? (pending || (list.noWaitTotal != null && list.length <= lf.shown)) : list.length <= lf.shown;
       inLibby.hidden = !lf.q.trim();
       inLibby.href = `https://libbyapp.com/search/${lib.library}/search/query-${encodeURIComponent(lf.q.trim())}/page-1`;
       inLibby.replaceChildren($("b", {}, `Search \u201c${lf.q.trim()}\u201d in Libby`), $("small", {}, "Also finds books your library lends on demand, which only show when you\u2019re signed in"));
@@ -459,7 +505,7 @@ footer.note .row svg { width: 26px; height: 26px }
       $("a", { class: "back", href: "#" }, "← All audiobooks"),
       $("div", { class: "top-head" }, $("h1", {}, "Your library on Libby"),
         $("p", {}, `Every audiobook the Tampa Bay Library Consortium owns. Tap one to open it in Libby, where you can borrow it or place a hold. List updated ${new Date(lib.updated + "T12:00").toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}.`)),
-      demand, $("div", { class: "filters" }, q, $("div", { class: "selects" }, more, sort)), chips, inLibby, count, grid, moreBtn);
+      demand, $("div", { class: "filters" }, q, $("div", { class: "selects" }, more, sort)), noWait, chips, inLibby, count, grid, moreBtn);
     draw();
     scrollTo(0, 0);
   }
