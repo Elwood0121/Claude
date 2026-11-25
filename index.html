@@ -177,6 +177,17 @@ footer.note .row svg { width: 26px; height: 26px }
 .el-links { display: flex; flex-wrap: wrap; gap: 8px }
 .el-links a { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 14px; border-radius: 999px; background: var(--bg); border: 2px solid var(--line);
   font: 600 14px var(--serif); text-decoration: none; color: var(--accent-ink) }
+
+/* one-tap Resume, shown when the phone blocks starting playback on its own */
+.resume { position: fixed; z-index: 11; left: 50%; transform: translateX(-50%); bottom: calc(88px + env(safe-area-inset-bottom));
+  width: min(420px, calc(100% - 32px)); display: flex; align-items: center; gap: 14px; padding: 12px 18px 12px 12px; text-align: left;
+  border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent); cursor: pointer;
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--accent) 70%, #000), 0 12px 30px color-mix(in srgb, var(--accent) 35%, transparent); animation: pop .35s ease-out }
+.resume .r-ic { width: 48px; height: 48px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--on-accent); color: var(--accent) }
+.resume .r-tx { min-width: 0 } .resume b { display: block; font: 700 19px/1.1 var(--serif) }
+.resume .r-tx span { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .9 }
+@keyframes pop { from { transform: translate(-50%, 20px); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .resume { animation: none } }
 @media (max-width: 560px) { .hero h1 { font-size: 24px } .hero .bfly { width: 36px; height: 32px; top: -26px } }
 @media (prefers-reduced-motion: reduce) {
   .brand svg, .garden .cat, .garden .cat svg, .garden .bee, .hero .bfly { animation: none }
@@ -199,6 +210,8 @@ footer.note .row svg { width: 26px; height: 26px }
     </div>
   </div>
 </div>
+
+<button class="resume" id="resume" hidden><span class="r-ic"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span><span class="r-tx"><b>Resume</b><span id="resume-t"></span></span></button>
 
 <div class="np" id="np" role="dialog" aria-modal="true" aria-label="Now Playing" aria-hidden="true">
   <button class="grab" id="np-close" aria-label="Close Now Playing"><i></i></button>
@@ -392,7 +405,8 @@ footer.note .row svg { width: 26px; height: 26px }
   setInterval(() => { if (sleepAt) { if (Date.now() >= sleepAt) { audio.pause(); setSleep(0); } else sleepLabel(); } }, 1000);
 
   const setPP = playing => document.querySelectorAll(".pp").forEach(b => { b.innerHTML = playing ? ICON.pause : ICON.play; b.setAttribute("aria-label", playing ? "Pause" : "Play"); });
-  audio.addEventListener("play", () => { audio.playbackRate = speed(); setPP(true); });
+  byId("resume").onclick = () => { audio.play().catch(() => {}); };
+  audio.addEventListener("play", () => { byId("resume").hidden = true; audio.playbackRate = speed(); setPP(true); });
   audio.addEventListener("pause", () => { setPP(false); save(); });
   audio.addEventListener("ended", () => { if (sleep === "ch") { setSleep(0); save(); return; } step(1); });
   audio.addEventListener("timeupdate", () => {
@@ -456,6 +470,12 @@ footer.note .row svg { width: 26px; height: 26px }
     if (b) {
       const p = store.get("pos", {})[b.id] || { i: last.i, t: 0 };
       load(b, p.i, p.t, false);
+      // Start right away. iPhones block sound until the first tap, so if this is refused, offer a big one-tap Resume button.
+      audio.play().catch(() => {
+        const r = byId("resume");
+        byId("resume-t").textContent = `${b.title} · ${b.ch[p.i][0]}`;
+        r.hidden = false;
+      });
     }
   }).catch(() => {}).finally(route);
 })();
