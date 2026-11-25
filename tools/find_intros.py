@@ -10,6 +10,9 @@ each chapter in books/books.json. The player starts chapters there.
 
 Needs: ffmpeg, the `vosk` Python package and a Vosk English model folder.
   python3 tools/find_intros.py --model /path/to/vosk-model-small-en-us-0.15 [book-id ...]
+
+In the "Claude (audiobook site)" cloud environment, the setup script installs these at session start:
+  /opt/vosk-venv/bin/python tools/find_intros.py --model /opt/vosk/vosk-model-small-en-us-0.15 <book-id>
 """
 import argparse, json, os, subprocess, sys, urllib.request
 from pathlib import Path
