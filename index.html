@@ -280,7 +280,7 @@ footer.note .row svg { width: 26px; height: 26px }
 
   // Your library's Libby code (the word after /library/ in its Libby link). When set, the Libby button opens
   // the book in that library's Libby; when empty, it opens an OverDrive search that can find it at nearby libraries.
-  const LIBBY_LIBRARY = "";
+  const LIBBY_LIBRARY = "tblc"; // Tampa Bay Library Consortium
   // Books that aren't free: links to official apps and stores only (nothing is hosted here).
   function elsewhereSection() {
     const q = b => encodeURIComponent(`${b.title} ${b.author}`);
